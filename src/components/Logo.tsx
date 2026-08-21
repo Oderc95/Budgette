@@ -123,9 +123,70 @@ export function Logo({
         </span>
         {tagline && (
           <span className={clsx('mt-1 block truncate font-hand text-ink-muted', t.tagline)}>
-            votre budget, en douceur
+            Faites pousser votre budget
           </span>
         )}
+      </span>
+    </div>
+  )
+}
+
+/** Tailles de l'enseigne. Le symbole et le nom grandissent ensemble. */
+const ENSEIGNE = {
+  md: { mark: 60, title: 'text-[2.4rem]', tagline: 'text-[1.15rem]', gap: 'gap-3.5' },
+  lg: { mark: 84, title: 'text-[3.4rem]', tagline: 'text-[1.45rem]', gap: 'gap-5' },
+} as const
+
+/**
+ * Enseigne : la version large de la marque, pour les écrans où elle accueille
+ * plutôt qu'elle ne signale.
+ *
+ * Le nom reprend le dégradé du symbole, découpé dans le texte : c'est ce qui
+ * lie les deux au lieu de les juxtaposer. La couleur de repli est posée avant
+ * le découpage, pour que le nom reste lisible là où `background-clip: text`
+ * n'est pas appliqué.
+ *
+ * La devise est alignée sur le nom et soulignée d'un trait dégradé qui reprend
+ * la largeur du texte, pour fermer le bloc.
+ */
+export function LogoLockup({
+  size = 'lg',
+  className,
+}: {
+  size?: keyof typeof ENSEIGNE
+  className?: string
+}) {
+  const t = ENSEIGNE[size]
+
+  return (
+    <div className={clsx('flex min-w-0 items-center', t.gap, className)}>
+      <motion.span
+        className="shrink-0 rounded-[0.9em] shadow-lift"
+        initial={{ scale: 0.85, opacity: 0, rotate: -8 }}
+        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+      >
+        <LogoMark size={t.mark} className="block" />
+      </motion.span>
+
+      <span className="min-w-0">
+        {/* Le bloc se rétracte sur le nom : le trait en reprend exactement la
+            largeur, quelle que soit la police effectivement chargée. */}
+        <span className="block w-fit">
+          <span
+            className={clsx(
+              'brand-gradient block bg-clip-text font-display font-semibold leading-[0.95] tracking-tight text-brand',
+              '[-webkit-text-fill-color:transparent]',
+              t.title,
+            )}
+          >
+            Budgette
+          </span>
+          <span className="brand-gradient mt-2 block h-[3px] w-full rounded-full opacity-70" />
+        </span>
+        <span className={clsx('mt-2 block font-hand text-ink-soft', t.tagline)}>
+          Faites pousser votre budget
+        </span>
       </span>
     </div>
   )

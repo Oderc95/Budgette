@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useApp } from '../store/useApp'
 import { Ambient, Button } from '../components/ui/primitives'
 import { Icon } from '../components/Icon'
-import { Logo } from '../components/Logo'
+import { LogoLockup } from '../components/Logo'
 import { Mascot } from '../components/Mascot'
 
 const PROMISES = [
@@ -15,7 +15,7 @@ const PROMISES = [
 
 export function SignIn() {
   const signIn = useApp((s) => s.signIn)
-  const [email, setEmail] = useState('demo@budgette.app')
+  const [email, setEmail] = useState('camille@budgette.app')
   const [password, setPassword] = useState('demo')
   const [showPassword, setShowPassword] = useState(false)
 
@@ -25,7 +25,7 @@ export function SignIn() {
       <div className="relative z-10 grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
       {/* Colonne de présentation */}
       <div className="relative hidden flex-col justify-between overflow-hidden border-r border-line bg-surface-2 p-10 lg:flex">
-        <Logo size="lg" />
+        <LogoLockup size="lg" />
 
         <div className="max-w-md">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -74,7 +74,7 @@ export function SignIn() {
       {/* Colonne de connexion */}
       <div className="flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-sm">
-          <Logo size="md" className="mb-8 lg:hidden" />
+          <LogoLockup size="md" className="mb-8 lg:hidden" />
 
           <h2 className="font-display text-3xl text-ink">Content de vous revoir</h2>
           <p className="mt-1.5 text-[0.9rem] text-ink-muted">Reprenons là où vous en étiez.</p>
