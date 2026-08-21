@@ -37,7 +37,7 @@ export function Admin() {
           <p className="eyebrow">Administration</p>
           <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Console</h1>
           <p className="mt-1 text-[0.9rem] text-ink-soft">
-            Accès réservé au rôle administrateur. Chaque action est journalisée.
+            Réservée aux administrateurs. Tout est journalisé.
           </p>
         </div>
         <Chip tone="orchid" icon="Shield">
@@ -95,7 +95,7 @@ export function Admin() {
           </Card>
 
           <Card>
-            <CardHeader title="Fonctionnalités" hint="Activation progressive, réversible à tout moment" icon="Settings" tone="amber" />
+            <CardHeader title="Fonctionnalités" hint="Progressif et réversible" icon="Settings" tone="amber" />
             <ul className="flex flex-col gap-2 px-5 pb-5">
               {flags.map((flag) => (
                 <li key={flag.id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4">
@@ -143,7 +143,7 @@ export function Admin() {
         <Card>
           <CardHeader
             title="Comptes"
-            hint="Les données budgétaires ne sont jamais consultables depuis la console"
+            hint="Jamais de données budgétaires ici"
             icon="Users"
             tone="mint"
             action={
@@ -249,7 +249,7 @@ export function Admin() {
       {tab === 'compliance' && (
         <>
           <Card>
-            <CardHeader title="Journal d’audit" hint="Toute action d’administration est tracée et horodatée" icon="FileText" tone="indigo" />
+            <CardHeader title="Journal d’audit" hint="Chaque action, tracée et horodatée" icon="FileText" tone="indigo" />
             <ul className="flex flex-col gap-1 px-5 pb-5">
               {MOCK_AUDIT_LOG.map((entry) => (
                 <li key={entry.at} className="flex flex-wrap items-center gap-2 border-b border-line/60 py-3 last:border-0">

@@ -75,7 +75,7 @@ export function ProfileScreen() {
         </Card>
 
         <Card>
-          <CardHeader title="Apparence" hint="Le thème suit votre système par défaut" icon="Sun" tone="amber" />
+          <CardHeader title="Apparence" hint="Suit votre système par défaut" icon="Sun" tone="amber" />
           <div className="px-5 pb-5">
             <div className="grid grid-cols-3 gap-2">
               {THEMES.map((item) => (
@@ -108,7 +108,7 @@ export function ProfileScreen() {
       <Card>
         <CardHeader
           title="Votre stratégie"
-          hint="Elle oriente les défis mis en avant et la répartition conseillée"
+          hint="Elle guide vos défis et votre répartition"
           icon="Target"
           tone="indigo"
         />

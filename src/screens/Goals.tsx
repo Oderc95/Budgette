@@ -32,8 +32,7 @@ export function Goals() {
           <p className="eyebrow">Objectifs</p>
           <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Où vous voulez arriver</h1>
           <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-ink-soft">
-            Un objectif écrit, chiffré et daté a bien plus de chances d’aboutir qu’une intention. Chacun peut être
-            rattaché à une poche d’épargne dédiée.
+            Chiffré et daté, un objectif aboutit. Chacun a sa poche d’épargne.
           </p>
         </div>
         <Button icon="Plus" onClick={() => setCreating(true)}>
@@ -47,7 +46,7 @@ export function Goals() {
           <EmptyState
             icon="Target"
             title="Aucun objectif pour l’instant"
-            hint="Commencez par un objectif simple et atteignable : le premier mois de charges en fonds d’urgence est un excellent point de départ."
+            hint="Commencez simple : un mois de charges en fonds d’urgence."
             action={
               <Button icon="Plus" onClick={() => setCreating(true)}>
                 Définir un objectif
@@ -139,7 +138,7 @@ export function Goals() {
       <Card>
         <CardHeader
           title="Vos poches d’épargne"
-          hint="Séparer l’argent par destination évite de piocher dedans sans y penser"
+          hint="Un euro rangé ne se dépense pas sans y penser"
           icon="PiggyBank"
           tone="amber"
         />
@@ -206,7 +205,7 @@ function Simulators({ fixedMonthly }: { fixedMonthly: number }) {
     <Card>
       <CardHeader
         title="Simulateurs"
-        hint="Deux calculs simples qui aident à décider"
+        hint="Pour décider en deux calculs"
         icon="Telescope"
         tone="indigo"
       />

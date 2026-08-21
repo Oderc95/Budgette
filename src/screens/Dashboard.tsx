@@ -84,7 +84,7 @@ export function Dashboard() {
           <Card>
             <CardHeader
               title="Où part votre argent"
-              hint="Répartition du revenu du mois, poste par poste"
+              hint="Où va le revenu du mois"
               icon="Wallet"
               action={
                 <Link to="/mois" className="text-[0.8rem] font-semibold text-brand-deep hover:underline">
@@ -183,7 +183,7 @@ export function Dashboard() {
 
           {/* Trajectoire */}
           <Card>
-            <CardHeader title="Votre trajectoire" hint="Revenus, dépenses et épargne mois après mois" icon="TrendingUp" tone="amber" />
+            <CardHeader title="Votre trajectoire" hint="Mois après mois" icon="TrendingUp" tone="amber" />
             <div className="px-3 pb-4 sm:px-5">
               <TrendChart budgets={budgets} />
             </div>
