@@ -55,6 +55,14 @@ npm run build:artifact  # fichier HTML autonome, dans dist-artifact/
 node scripts/smoke.mjs  # parcours automatisé des écrans + captures
 ```
 
+## Hébergement
+
+Le site est publié sur GitHub Pages par `.github/workflows/pages.yml`, à chaque push sur la branche
+de développement. Le routage passe par `HashRouter` et les assets par `base: './'`, donc aucune
+réécriture d'URL n'est demandée à l'hébergeur : les fichiers de `dist/` suffisent tels quels.
+
+Pour activer la publication une première fois : **Settings → Pages → Source : GitHub Actions**.
+
 ## Architecture
 
 ```

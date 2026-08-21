@@ -1,0 +1,55 @@
+# Publie le SPA sur GitHub Pages à chaque push sur la branche de développement.
+# Le routage utilise HashRouter et `base: './'`, donc aucune réécriture d'URL
+# n'est nécessaire côté hébergeur : les fichiers statiques suffisent.
+name: Déploiement GitHub Pages
+
+on:
+  push:
+    branches: [claude/github-hosting-corrections-bnb6jy]
+  workflow_dispatch:
+
+# Autorise l'action de déploiement à publier sur Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois ; les pushs successifs remplacent la file
+# d'attente sans annuler le déploiement déjà en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Vérifications
+        run: |
+          npm run lint
+          npm run typecheck
+
+      - run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4
