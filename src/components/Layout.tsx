@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Toaster } from './Toaster'
@@ -59,6 +59,18 @@ function LevelSummary({ compact = false }: { compact?: boolean }) {
   const stage = stageForLevel(level.level)
   const stageIndex = GROWTH_STAGES.findIndex((s) => s.id === stage.id)
 
+  // Chaque gain d'XP fait pulser la barre et flotter le montant gagné :
+  // l'effort tenu se voit à l'endroit même où la progression s'accumule.
+  const [gain, setGain] = useState({ coup: 0, delta: 0 })
+  const previousXp = useRef(xp)
+  useEffect(() => {
+    if (xp > previousXp.current) {
+      const delta = xp - previousXp.current
+      setGain((g) => ({ coup: g.coup + 1, delta }))
+    }
+    previousXp.current = xp
+  }, [xp])
+
   return (
     <div className={clsx('rounded-2xl border border-line bg-surface-2 p-3', compact && 'flex items-center gap-3')}>
       <div className={clsx('flex items-center gap-3', !compact && 'mb-2')}>
@@ -78,7 +90,39 @@ function LevelSummary({ compact = false }: { compact?: boolean }) {
           </p>
         </div>
       </div>
-      {!compact && <Progress value={level.progress} tone="amber" height={6} label="Progression du niveau" />}
+      {!compact && (
+        <div className="relative">
+          {gain.coup > 0 && (
+            <motion.span
+              key={gain.coup}
+              className="tabular pointer-events-none absolute -top-5 right-0 text-[0.72rem] font-bold text-amber-deep"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: [0, 1, 1, 0], y: -12 }}
+              transition={{ duration: 1.6, ease: 'easeOut' }}
+            >
+              +{gain.delta} XP
+            </motion.span>
+          )}
+          <motion.div
+            key={`pulse-${gain.coup}`}
+            animate={
+              gain.coup > 0
+                ? {
+                    scale: [1, 1.06, 1],
+                    filter: [
+                      'drop-shadow(0 0 0px var(--c-amber))',
+                      'drop-shadow(0 0 7px var(--c-amber))',
+                      'drop-shadow(0 0 0px var(--c-amber))',
+                    ],
+                  }
+                : undefined
+            }
+            transition={{ duration: 0.9, ease: 'easeInOut' }}
+          >
+            <Progress value={level.progress} tone="amber" height={6} label="Progression du niveau" />
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

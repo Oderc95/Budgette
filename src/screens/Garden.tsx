@@ -38,8 +38,7 @@ export function Garden() {
         <p className="eyebrow">Jardin</p>
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Votre progression</h1>
         <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-ink-soft">
-          La plante grandit avec votre régularité, pas avec vos revenus. Douze paliers, puis des saisons qui
-          s’enchaînent sans fin.
+          Elle grandit avec votre régularité, pas vos revenus. Douze paliers, puis les saisons.
         </p>
       </header>
 
@@ -173,7 +172,7 @@ export function Garden() {
       <Card>
         <CardHeader
           title="Les saisons"
-          hint="Un cycle de trois mois, puis on recommence avec un autre thème"
+          hint="Trois mois par thème, sans fin"
           icon={season.theme.icon}
           tone="indigo"
         />

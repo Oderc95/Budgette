@@ -40,8 +40,7 @@ export function Quests() {
         <p className="eyebrow">Quêtes</p>
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Ce que vous pouvez tenter</h1>
         <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-ink-soft">
-          Chaque défi est un petit engagement vérifiable. Cochez-le une fois tenu : l’expérience gagnée fait pousser
-          votre jardin, et la série multiplie les gains.
+          Un défi tenu = de l’XP pour votre jardin. La série multiplie les gains.
         </p>
       </header>
 

@@ -137,7 +137,12 @@ export function MonthEntry() {
       <div className="sticky top-[3.75rem] z-20 lg:top-3">
         <Card className="relative">
           {celebrate && <Confetti />}
-          <div className="grid gap-px overflow-hidden rounded-[inherit] bg-line sm:grid-cols-4">
+          {/*
+            Sur mobile la synthèse reste affichée pendant la saisie, mais en
+            2 × 2 serré : empilée, elle recouvrait presque la moitié de
+            l'écran et il ne restait plus de place pour saisir quoi que ce soit.
+          */}
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[inherit] bg-line sm:grid-cols-4">
             {[
               { label: 'Revenus', value: euro(summary.totals.income), tone: 'mint' as const },
               { label: 'Charges + dettes', value: euro(summary.totals.fixed + summary.totals.debt), tone: 'indigo' as const },
@@ -148,9 +153,11 @@ export function MonthEntry() {
                 tone: summary.endOfMonth >= 0 ? ('mint' as const) : ('berry' as const),
               },
             ].map((cell) => (
-              <div key={cell.label} className="bg-surface px-4 py-3.5">
-                <p className="eyebrow">{cell.label}</p>
-                <p className={clsx('tabular mt-1 font-display text-xl leading-none', TONE[cell.tone].text)}>{cell.value}</p>
+              <div key={cell.label} className="bg-surface px-3 py-2 sm:px-4 sm:py-3.5">
+                <p className="eyebrow text-[0.58rem] sm:text-[0.68rem]">{cell.label}</p>
+                <p className={clsx('tabular mt-0.5 font-display text-base leading-none sm:mt-1 sm:text-xl', TONE[cell.tone].text)}>
+                  {cell.value}
+                </p>
               </div>
             ))}
           </div>

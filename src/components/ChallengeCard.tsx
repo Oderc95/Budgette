@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import type { Challenge } from '../domain/types'
 import { useApp, useChallengeState } from '../store/useApp'
+import { Confetti } from './Confetti'
 import { Icon } from './Icon'
 import { TONE } from './ui/tone'
 import { DIFFICULTY_META, streakMultiplier } from '../domain/gamification'
@@ -24,21 +26,28 @@ export function ChallengeCard({
   const ratio = Math.min(1, value / challenge.target)
   const multiplier = streakMultiplier(streak)
   const tone = TONE[challenge.tone]
+  // Compte les validations pour rejouer les confettis à chacune : la clé
+  // change, le composant se remonte, la pluie repart.
+  const [fete, setFete] = useState(0)
 
   return (
     <motion.button
       type="button"
-      onClick={() => toggle(challenge.id)}
+      onClick={() => {
+        if (!done) setFete((f) => f + 1)
+        toggle(challenge.id)
+      }}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 380, damping: 24 }}
       aria-pressed={done}
       className={clsx(
-        'group relative flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition',
+        'group relative flex w-full items-start gap-3 overflow-hidden rounded-2xl border p-4 text-left transition',
         done ? clsx(tone.bg, tone.border) : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2',
         featured && !done && 'border-brand/40 ring-1 ring-brand/20',
       )}
     >
+      {fete > 0 && done && <Confetti key={fete} count={16} />}
       <motion.span
         key={done ? 'done' : 'todo'}
         className={clsx(

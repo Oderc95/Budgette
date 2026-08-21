@@ -136,9 +136,15 @@ for (const theme of ['light', 'dark']) {
     for (const [route, name] of [['', 'accueil'], ...routes]) {
       await page.goto(`${file}#/${route}`)
       // La transition d'écran dure ~450 ms : mesurer pendant qu'elle glisse
-      // compterait son décalage comme un débordement.
+      // compterait son décalage comme un débordement. Sous charge elle peut
+      // durer davantage, donc une mesure positive n'est retenue que si elle
+      // se confirme une fois l'écran posé.
       await page.waitForTimeout(800)
-      const debord = await mesurerDebord()
+      let debord = await mesurerDebord()
+      if (debord > 1) {
+        await page.waitForTimeout(1200)
+        debord = await mesurerDebord()
+      }
       if (debord > 1) {
         errors.push(`[${theme}] ${name} déborde de ${debord} px à ${width} px de large`)
       }
