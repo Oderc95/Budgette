@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import { useApp } from '../store/useApp'
@@ -31,6 +32,16 @@ export function Garden() {
   const season = seasonForMonth(monthKey(new Date()))
   const unlockedMap = new Map(unlocked.map((u) => [u.badgeId, u.unlockedAt]))
   const closedMonths = budgets.filter((b) => b.closed).length
+
+  // Le chemin s'ouvre centré sur le palier atteint : les premiers paliers
+  // sont de l'histoire ancienne, c'est la suite qui intéresse.
+  const cheminRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const conteneur = cheminRef.current
+    const actuel = conteneur?.querySelector<HTMLElement>('[data-palier-actuel]')
+    if (!conteneur || !actuel) return
+    conteneur.scrollLeft = actuel.offsetLeft - (conteneur.clientWidth - actuel.clientWidth) / 2
+  }, [stageIndex])
 
   return (
     <div className="flex flex-col gap-5">
@@ -88,13 +99,13 @@ export function Garden() {
       {/* Chemin des paliers */}
       <Card>
         <CardHeader title="Le chemin complet" hint="Du grain à la canopée" icon="Sprout" tone="mint" />
-        <div className="overflow-x-auto px-5 pb-5">
+        <div ref={cheminRef} className="overflow-x-auto scroll-smooth px-5 pb-5">
           <ol className="flex min-w-max items-stretch gap-2">
             {GROWTH_STAGES.map((item, index) => {
               const reached = level.level >= item.fromLevel
               const current = index === stageIndex
               return (
-                <li key={item.id} className="w-36 shrink-0">
+                <li key={item.id} className="w-36 shrink-0" {...(current ? { 'data-palier-actuel': true } : {})}>
                   <div
                     className={clsx(
                       'flex h-full flex-col items-center gap-2 rounded-2xl border p-3 text-center transition',
