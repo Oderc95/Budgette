@@ -5,7 +5,6 @@ import { useApp } from '../store/useApp'
 import { AnimatedNumber, Button, Card, CardHeader, Chip, Dial, Progress, Stat } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
-import { LogoLockup } from '../components/Logo'
 import { Mascot } from '../components/Mascot'
 import { FlowBar } from '../components/FlowBar'
 import { TrendChart } from '../components/TrendChart'
@@ -56,9 +55,6 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* L'enseigne ouvre la page : c'est l'écran d'arrivée de l'app. */}
-      <LogoLockup size="md" />
-
       {/* En-tête */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>

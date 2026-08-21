@@ -59,6 +59,8 @@ interface AppState {
   toasts: Toast[]
   /** Mois affiché dans les écrans de saisie et de synthèse. */
   activeMonth: MonthKey
+  /** Visite guidée : montrée une seule fois, à la première arrivée. */
+  tourDone: boolean
 
   signIn: () => void
   signOut: () => void
@@ -78,6 +80,7 @@ interface AppState {
   grantXp: (amount: number, reason: string) => void
   pushToast: (toast: Omit<Toast, 'id'>) => void
   dismissToast: (id: number) => void
+  completeTour: () => void
   resetDemo: () => void
 }
 
@@ -93,6 +96,7 @@ const initial = () => ({
   theme: 'system' as ThemeChoice,
   toasts: [] as Toast[],
   activeMonth: latestMonth(MOCK_BUDGETS),
+  tourDone: false,
 })
 
 function latestMonth(budgets: MonthBudget[]): MonthKey {
@@ -272,6 +276,8 @@ export const useApp = create<AppState>()(
 
       dismissToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 
+      completeTour: () => set({ tourDone: true }),
+
       resetDemo: () => set({ ...initial(), authenticated: true }),
     }),
     {
@@ -279,7 +285,14 @@ export const useApp = create<AppState>()(
       storage: safeStorage,
       // La session et les notifications ne sont jamais persistées.
       partialize: ({ toasts: _toasts, authenticated: _auth, ...rest }) => rest,
-      version: 1,
+      /*
+       * Un état persisté d'une version antérieure est jeté, pas raccommodé :
+       * ce sont des données de démonstration, et les garder ferait cohabiter
+       * l'ancien profil avec le nouveau jeu — c'est exactement ce qui laissait
+       * « Credo » à l'écran après le remplacement du profil par Camille.
+       */
+      version: 2,
+      migrate: () => ({ ...initial() }),
     },
   ),
 )

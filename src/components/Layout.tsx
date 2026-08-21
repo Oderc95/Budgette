@@ -1,15 +1,39 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Toaster } from './Toaster'
+import { Tour } from './Tour'
 import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../domain/gamification'
 import { Ambient, Progress } from './ui/primitives'
 import { Logo } from './Logo'
 import { Mascot } from './Mascot'
 import { monthKey } from '../lib/format'
+
+/**
+ * Ordre de lecture des écrans : il donne la direction des transitions. Aller
+ * vers un écran plus à droite dans la barre fait glisser le contenu vers la
+ * gauche, et inversement — le mouvement raconte la navigation.
+ */
+const ROUTE_ORDER = ['/', '/mois', '/quetes', '/objectifs', '/jardin', '/profil', '/admin']
+
+const ECRAN = {
+  enter: (direction: number) => ({ opacity: 0, x: 44 * direction, scale: 0.985 }),
+  center: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: { duration: 0.26, ease: [0.22, 1, 0.36, 1] as const },
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    x: -38 * direction,
+    scale: 0.985,
+    transition: { duration: 0.15, ease: 'easeIn' as const },
+  }),
+}
 
 const NAV = [
   { to: '/', label: 'Accueil', icon: 'LayoutDashboard', end: true },
@@ -38,9 +62,13 @@ function LevelSummary({ compact = false }: { compact?: boolean }) {
   return (
     <div className={clsx('rounded-2xl border border-line bg-surface-2 p-3', compact && 'flex items-center gap-3')}>
       <div className={clsx('flex items-center gap-3', !compact && 'mb-2')}>
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface">
+        <motion.span
+          className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface"
+          whileHover={{ scale: 1.12, rotate: -6 }}
+          transition={{ type: 'spring', stiffness: 340, damping: 14 }}
+        >
           <Mascot stageIndex={stageIndex} size={38} animate={false} />
-        </span>
+        </motion.span>
         <div className="min-w-0">
           <p className="truncate font-display text-[0.95rem] leading-tight text-ink">
             Niveau {level.level} · {stage.label}
@@ -65,12 +93,25 @@ export function Layout() {
 
   const nav = role === 'admin' ? [...NAV, { to: '/admin', label: 'Admin', icon: 'Shield' }] : NAV
 
+  // Ajustement d'état pendant le rendu : à chaque changement d'écran, la
+  // direction est dérivée de l'écran quitté, avant que la transition ne parte.
+  const routeIndex = ROUTE_ORDER.indexOf(location.pathname)
+  const [trace, setTrace] = useState({ index: routeIndex, direction: 0 })
+  if (trace.index !== routeIndex) {
+    setTrace({
+      index: routeIndex,
+      direction: routeIndex === -1 || trace.index === -1 ? 0 : Math.sign(routeIndex - trace.index),
+    })
+  }
+  const direction = trace.direction
+
   return (
     <>
       <Ambient />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1400px]">
       {/* Navigation latérale — écrans larges */}
-      <aside className="pad-safe-x sticky top-0 hidden h-dvh w-72 shrink-0 flex-col gap-5 border-r border-line bg-bg/80 px-5 py-6 backdrop-blur-xl lg:flex">
+      {/* La marge intérieure tient les blocs à distance du trait de séparation. */}
+      <aside className="pad-safe-x sticky top-0 hidden h-dvh w-[19.5rem] shrink-0 flex-col gap-5 border-r border-line bg-bg/80 px-6 py-6 backdrop-blur-xl lg:flex">
         <Logo size="md" />
 
         <nav className="flex flex-col gap-1">
@@ -179,14 +220,18 @@ export function Layout() {
         </header>
 
         <main className="space-for-tabbar min-w-0 flex-1 px-4 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-8">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.24, ease: 'easeOut' }}
-          >
-            <Outlet />
-          </motion.div>
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={location.pathname}
+              custom={direction}
+              variants={ECRAN}
+              initial="enter"
+              animate="center"
+              exit="exit"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         {/* Navigation basse — écrans étroits */}
@@ -218,6 +263,7 @@ export function Layout() {
         </nav>
       </div>
 
+      <Tour />
       <Toaster />
       </div>
     </>

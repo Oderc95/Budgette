@@ -56,6 +56,19 @@ for (const theme of ['light', 'dark']) {
 
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await page.waitForSelector('text=Où part votre argent', { timeout: 15000 })
+
+  // La visite guidée accueille la première connexion : on la capture, on la
+  // parcourt en entier (chaque étape doit s'afficher sans erreur), puis elle
+  // ne doit plus jamais réapparaître dans la session.
+  await page.waitForSelector('text=Ton accueil', { timeout: 15000 })
+  await shoot(page, `12-tuto-${theme}`, 1440, 900)
+  for (let etape = 0; etape < 4; etape += 1) {
+    await page.getByRole('button', { name: 'Suivant' }).click()
+    await page.waitForTimeout(350)
+  }
+  await page.getByRole('button', { name: 'C’est parti !' }).click()
+  await page.waitForTimeout(500)
+
   await shoot(page, `02-accueil-${theme}`, 1440, 1800)
 
   const routes = [
@@ -122,7 +135,9 @@ for (const theme of ['light', 'dark']) {
     await page.setViewportSize({ width, height: 780 })
     for (const [route, name] of [['', 'accueil'], ...routes]) {
       await page.goto(`${file}#/${route}`)
-      await page.waitForTimeout(400)
+      // La transition d'écran dure ~450 ms : mesurer pendant qu'elle glisse
+      // compterait son décalage comme un débordement.
+      await page.waitForTimeout(800)
       const debord = await mesurerDebord()
       if (debord > 1) {
         errors.push(`[${theme}] ${name} déborde de ${debord} px à ${width} px de large`)

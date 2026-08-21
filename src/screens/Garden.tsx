@@ -16,6 +16,7 @@ import { Card, CardHeader, Chip, Progress, Stat } from '../components/ui/primiti
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { Mascot } from '../components/Mascot'
+import { LivingMascot } from '../components/LivingMascot'
 import { dateLabel, monthKey } from '../lib/format'
 
 export function Garden() {
@@ -46,7 +47,7 @@ export function Garden() {
       <Card>
         <div className="grid gap-6 p-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center">
           <div className="flex justify-center">
-            <Mascot stageIndex={stageIndex} size={220} />
+            <LivingMascot stageIndex={stageIndex} size={220} />
           </div>
           <div>
             <Chip tone="amber" icon="Sparkles">
