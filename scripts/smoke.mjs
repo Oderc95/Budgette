@@ -84,6 +84,55 @@ for (const theme of ['light', 'dark']) {
   await page.goto(`${file}#/`)
   await shoot(page, `09-mobile-${theme}`, 414, 1400)
 
+  /*
+    Contrôle du responsive.
+
+    On mesure, écran par écran et largeur par largeur, ce qui dépasse le bord
+    droit. Le débordement horizontal est le symptôme d'une grille ou d'une
+    largeur fixe oubliée, et il ne se voit pas sur une capture : `body` porte
+    `overflow-x: hidden`, qui masque le problème au lieu de le corriger.
+
+    Les conteneurs qui défilent horizontalement à dessein — un tableau large,
+    une rangée d'onglets — sont exclus en remontant les ancêtres. La remontée
+    s'arrête à `body` : son `overflow-x` est précisément le filet de sécurité
+    dont on veut vérifier qu'il ne sert pas.
+  */
+  const mesurerDebord = () =>
+    page.evaluate(() => {
+      const limite = document.documentElement.clientWidth
+      const estClippe = (element) => {
+        for (let p = element.parentElement; p && p !== document.body; p = p.parentElement) {
+          const overflow = getComputedStyle(p).overflowX
+          if (overflow === 'auto' || overflow === 'scroll' || overflow === 'hidden') return true
+        }
+        return false
+      }
+
+      let pire = 0
+      for (const element of document.querySelectorAll('body *')) {
+        const rect = element.getBoundingClientRect()
+        if (rect.width === 0 || rect.height === 0) continue
+        const depassement = Math.round(rect.right - limite)
+        if (depassement > pire && !estClippe(element)) pire = depassement
+      }
+      return pire
+    })
+
+  for (const width of [320, 360, 414]) {
+    await page.setViewportSize({ width, height: 780 })
+    for (const [route, name] of [['', 'accueil'], ...routes]) {
+      await page.goto(`${file}#/${route}`)
+      await page.waitForTimeout(400)
+      const debord = await mesurerDebord()
+      if (debord > 1) {
+        errors.push(`[${theme}] ${name} déborde de ${debord} px à ${width} px de large`)
+      }
+    }
+  }
+
+  await page.goto(`${file}#/`)
+  await shoot(page, `11-mobile-etroit-${theme}`, 320, 780)
+
   await context.close()
 }
 

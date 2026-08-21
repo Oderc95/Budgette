@@ -8,6 +8,7 @@ import { Ambient, Button, Chip, Progress } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { newId } from '../lib/id'
+import { Logo } from '../components/Logo'
 import { Mascot } from '../components/Mascot'
 import { addMonths, euro, monthKey, monthLabel } from '../lib/format'
 
@@ -72,12 +73,7 @@ export function Onboarding() {
       <Ambient />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-5 py-8">
       <header className="mb-8">
-        <div className="mb-5 flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl brand-gradient text-on-accent shadow-soft">
-            <Icon name="Sprout" size={19} />
-          </span>
-          <span className="font-display text-xl font-semibold text-ink">Budgette</span>
-        </div>
+        <Logo size="md" className="mb-5" />
 
         <div className="flex items-center gap-2">
           {STEPS.map((label, index) => (

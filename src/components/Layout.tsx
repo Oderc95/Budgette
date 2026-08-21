@@ -7,6 +7,7 @@ import { Icon } from './Icon'
 import { Toaster } from './Toaster'
 import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../domain/gamification'
 import { Ambient, Progress } from './ui/primitives'
+import { Logo } from './Logo'
 import { Mascot } from './Mascot'
 import { monthKey } from '../lib/format'
 
@@ -54,24 +55,6 @@ function LevelSummary({ compact = false }: { compact?: boolean }) {
   )
 }
 
-function Brand() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <motion.span
-        className="grid size-9 place-items-center rounded-xl brand-gradient text-on-accent shadow-soft"
-        whileHover={{ rotate: -10, scale: 1.1 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 12 }}
-      >
-        <Icon name="Sprout" size={19} />
-      </motion.span>
-      <span className="leading-none">
-        <span className="block font-display text-[1.25rem] font-semibold tracking-tight text-ink">Budgette</span>
-        <span className="block font-hand text-[0.9rem] text-ink-muted">votre budget, en douceur</span>
-      </span>
-    </div>
-  )
-}
-
 export function Layout() {
   useThemeAttribute()
   const location = useLocation()
@@ -87,8 +70,8 @@ export function Layout() {
       <Ambient />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1400px]">
       {/* Navigation latérale — écrans larges */}
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-5 border-r border-line px-5 py-6 lg:flex">
-        <Brand />
+      <aside className="pad-safe-x sticky top-0 hidden h-dvh w-72 shrink-0 flex-col gap-5 border-r border-line bg-bg/80 px-5 py-6 backdrop-blur-xl lg:flex">
+        <Logo size="md" />
 
         <nav className="flex flex-col gap-1">
           {nav.map((item) => (
@@ -154,9 +137,10 @@ export function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barre supérieure — écrans étroits */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/85 px-4 py-3 backdrop-blur lg:hidden">
-          <Brand />
-          <div className="flex items-center gap-2">
+        <header className="pad-safe-x sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 py-3 backdrop-blur-xl lg:hidden">
+          {/* La signature ne tient pas à côté des commandes sur un écran étroit. */}
+          <Logo size="sm" tagline={false} />
+          <div className="flex shrink-0 items-center gap-2">
             <span className="chip bg-berry-soft text-berry-deep">
               <motion.span
                 animate={{ scale: [1, 1.18, 1] }}
@@ -166,6 +150,24 @@ export function Layout() {
               </motion.span>
               {streak}
             </span>
+            {/*
+              La barre d'onglets n'a de place que pour les cinq destinations du
+              quotidien : la console d'administration passe par l'en-tête.
+            */}
+            {role === 'admin' && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  clsx(
+                    'grid size-9 place-items-center rounded-full border border-line transition',
+                    isActive ? 'bg-brand-soft text-brand-deep' : 'text-ink-soft',
+                  )
+                }
+                aria-label="Console d'administration"
+              >
+                <Icon name="Shield" size={17} />
+              </NavLink>
+            )}
             <NavLink
               to="/profil"
               className="grid size-9 place-items-center rounded-full bg-brand text-[0.85rem] font-bold text-on-accent"
@@ -176,7 +178,7 @@ export function Layout() {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-8">
+        <main className="space-for-tabbar min-w-0 flex-1 px-4 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-8">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 8 }}
@@ -188,8 +190,8 @@ export function Layout() {
         </main>
 
         {/* Navigation basse — écrans étroits */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 backdrop-blur lg:hidden">
-          <div className="mx-auto flex max-w-lg items-stretch justify-between px-2 py-1.5">
+        <nav className="pad-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 backdrop-blur-xl lg:hidden">
+          <div className="pad-safe-x mx-auto flex max-w-lg items-stretch justify-between px-2 py-1.5">
             {nav.slice(0, 5).map((item) => (
               <NavLink
                 key={item.to}

@@ -52,7 +52,7 @@ npm run dev          # serveur de développement
 npm run typecheck    # vérification des types
 npm run build        # SPA prêt à héberger, dans dist/
 npm run build:artifact  # fichier HTML autonome, dans dist-artifact/
-node scripts/smoke.mjs  # parcours automatisé des écrans + captures
+node scripts/smoke.mjs  # parcours des écrans, captures, contrôle du responsive
 ```
 
 ## Hébergement
@@ -108,6 +108,14 @@ contraintes, framboise pour les dettes, ambre pour l'épargne, orchidée pour le
 
 La mascotte est un dessin SVG paramétré par le palier atteint : elle passe du grain à la canopée en
 douze étapes, sans aucune image bitmap.
+
+La marque reprend la même image : une pousse qui sort d'une pièce. Elle vit dans
+`src/components/Logo.tsx`, et le même dessin est repris en dur dans `public/favicon.svg` — une
+favicon est chargée hors du document, où les variables de thème n'existent pas.
+
+Les halos colorés du fond sont ancrés loin hors du cadre et recouverts d'un voile qui ramène le
+centre de la page à la couleur de fond : la couleur ne subsiste qu'aux bords, et aucun texte ne se
+lit par-dessus une tache.
 
 ### Le fond est peint sur `#root`, pas seulement sur `body`
 
