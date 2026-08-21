@@ -57,9 +57,12 @@ node scripts/smoke.mjs  # parcours automatisé des écrans + captures
 
 ## Hébergement
 
-Le site est publié sur GitHub Pages par `.github/workflows/pages.yml`, à chaque push sur la branche
-de développement. Le routage passe par `HashRouter` et les assets par `base: './'`, donc aucune
-réécriture d'URL n'est demandée à l'hébergeur : les fichiers de `dist/` suffisent tels quels.
+Le site est publié sur <https://oderc95.github.io/Budgette/> par
+`.github/workflows/pages.yml`, à chaque push sur `main`. Les propositions de modification passent
+par le même workflow, qui s'arrête après les vérifications sans rien publier.
+
+Le routage passe par `HashRouter` et les assets par `base: './'`, donc aucune réécriture d'URL n'est
+demandée à l'hébergeur : les fichiers de `dist/` suffisent tels quels.
 
 Pour activer la publication une première fois : **Settings → Pages → Source : GitHub Actions**.
 

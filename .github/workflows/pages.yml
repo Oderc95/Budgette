@@ -1,11 +1,12 @@
-# Publie le SPA sur GitHub Pages à chaque push sur la branche de développement.
+# Vérifie chaque proposition de modification, et publie `main` sur GitHub Pages.
 # Le routage utilise HashRouter et `base: './'`, donc aucune réécriture d'URL
 # n'est nécessaire côté hébergeur : les fichiers statiques suffisent.
-name: Déploiement GitHub Pages
+name: Vérifications et déploiement
 
 on:
   push:
-    branches: [claude/github-hosting-corrections-bnb6jy]
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 # Autorise l'action de déploiement à publier sur Pages.
@@ -14,11 +15,12 @@ permissions:
   pages: write
   id-token: write
 
-# Un seul déploiement à la fois ; les pushs successifs remplacent la file
-# d'attente sans annuler le déploiement déjà en cours.
+# Une PR qui reçoit plusieurs pushs n'en vérifie que le dernier ; sur `main`,
+# les déploiements se suivent sans s'annuler pour ne pas laisser le site
+# publié dans un état intermédiaire.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -46,6 +48,8 @@ jobs:
 
   deploy:
     needs: build
+    # Les PR s'arrêtent après les vérifications : seule `main` est publiée.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
