@@ -52,7 +52,8 @@ npm run dev          # serveur de développement
 npm run typecheck    # vérification des types
 npm run build        # SPA prêt à héberger, dans dist/
 npm run build:artifact  # fichier HTML autonome, dans dist-artifact/
-node scripts/smoke.mjs  # parcours automatisé des écrans + captures
+node scripts/smoke.mjs  # parcours des écrans, captures, contrôle du responsive
+node scripts/verifier-donnees.mjs  # cohérence du jeu de démonstration
 ```
 
 ## Hébergement
@@ -97,6 +98,20 @@ revalider les calculs sensibles, et pourra être réutilisée telle quelle par u
 - **Zustand** avec persistance tolérante aux pannes : en navigation privée, l'accès au stockage
   local peut lever une exception ; l'application continue alors de fonctionner sans persistance.
 
+## Le jeu de démonstration
+
+Le profil est celui de Camille Roussel, 31 ans, graphiste salariée à Nantes. Rien n'est repris d'un
+relevé réel : les montants sont construits pour raconter une trajectoire que l'interface doit savoir
+montrer — janvier dans le rouge, découvert éteint en mars, 430 € de soins dentaires en mai,
+augmentation en juin, crédit soldé en juillet, et un mois d'août sans aucune dette.
+
+Ces données sont lues par des écrans qui en dérivent chacun leurs propres chiffres. Une incohérence
+entre eux ne casse rien : elle affiche deux montants différents pour la même chose, ce qui ne se voit
+qu'à la lecture attentive. `scripts/verifier-donnees.mjs` recharge donc le jeu avec les vraies
+fonctions du domaine et vérifie les liens qu'aucun type n'exprime — versements des poches contre
+lignes d'épargne, avancement des objectifs contre solde des poches, XP contre niveau annoncé,
+comptes du journal d'audit contre liste des comptes.
+
 ## Design
 
 Palette « Verger au couchant » : un fond chaud — crème abricotée en clair, aubergine profond en
@@ -108,6 +123,14 @@ contraintes, framboise pour les dettes, ambre pour l'épargne, orchidée pour le
 
 La mascotte est un dessin SVG paramétré par le palier atteint : elle passe du grain à la canopée en
 douze étapes, sans aucune image bitmap.
+
+La marque reprend la même image : une pousse qui sort d'une pièce. Elle vit dans
+`src/components/Logo.tsx`, et le même dessin est repris en dur dans `public/favicon.svg` — une
+favicon est chargée hors du document, où les variables de thème n'existent pas.
+
+Les halos colorés du fond sont ancrés loin hors du cadre et recouverts d'un voile qui ramène le
+centre de la page à la couleur de fond : la couleur ne subsiste qu'aux bords, et aucun texte ne se
+lit par-dessus une tache.
 
 ### Le fond est peint sur `#root`, pas seulement sur `body`
 

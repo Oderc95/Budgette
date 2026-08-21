@@ -5,6 +5,7 @@ import { useApp } from '../store/useApp'
 import { AnimatedNumber, Button, Card, CardHeader, Chip, Dial, Progress, Stat } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
+import { LogoLockup } from '../components/Logo'
 import { Mascot } from '../components/Mascot'
 import { FlowBar } from '../components/FlowBar'
 import { TrendChart } from '../components/TrendChart'
@@ -55,6 +56,9 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* L'enseigne ouvre la page : c'est l'écran d'arrivée de l'app. */}
+      <LogoLockup size="md" />
+
       {/* En-tête */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -79,7 +83,7 @@ export function Dashboard() {
       </header>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {/* Le mois en cours */}
           <Card>
             <CardHeader
@@ -220,7 +224,7 @@ export function Dashboard() {
         </div>
 
         {/* Colonne latérale */}
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {/* Jardin */}
           <Card>
             <div className="flex flex-col items-center px-5 pb-5 pt-6 text-center">

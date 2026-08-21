@@ -75,9 +75,11 @@ export function MonthEntry() {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="eyebrow">Saisie mensuelle</p>
-          <div className="mt-1 flex items-center gap-2">
+          {/* La puce d'état passe à la ligne plutôt que de pousser le sélecteur
+              de mois hors de l'écran sur les petites largeurs. */}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setMonth(addMonths(month, -1))}
