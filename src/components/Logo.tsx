@@ -3,11 +3,12 @@ import { motion } from 'framer-motion'
 import clsx from 'clsx'
 
 /**
- * Marque de Budgette : une pousse qui sort d'une pièce.
+ * Marque de Budgette : une pousse.
  *
- * Le disque évoque l'argent mis de côté, la pousse ce qu'il devient. C'est la
- * même image que la mascotte du jardin, réduite à une silhouette qui tient
- * encore à la taille d'une favicon.
+ * C'est la même image que la mascotte du jardin, réduite à une silhouette qui
+ * tient encore à la taille d'une favicon. Le dessin reste volontairement nu :
+ * tout ce qu'on ajoute sous la tige finit par se lire comme un pictogramme
+ * existant plutôt que comme un socle.
  *
  * Les dégradés sont identifiés par `useId` : la marque est rendue plusieurs
  * fois sur une même page — barre latérale et en-tête mobile coexistent aux
@@ -49,29 +50,24 @@ export function LogoMark({ size = 44, className }: { size?: number; className?: 
       <rect width="48" height="48" rx="13" fill={`url(#${fill})`} />
       <rect width="48" height="48" rx="13" fill={`url(#${shine})`} />
 
-      {/* La pièce, en retrait : elle porte la pousse sans lui disputer l'œil. */}
-      <circle
-        cx="24"
-        cy="32.6"
-        r="6.4"
-        fill="none"
-        stroke="var(--c-on-accent)"
-        strokeWidth="2.4"
-        opacity="0.55"
-      />
+      {/*
+        Une pousse, sans socle. Une version précédente posait la tige sur un
+        anneau : un cercle sous une tige verticale se lit comme le symbole ♀,
+        et c'est cette lecture qui s'impose avant celle de la pièce.
+      */}
       <path
-        d="M24 26.4 C 23.5 22, 23.7 19, 24 15.4"
+        d="M24 38 C 23.4 30, 23.7 23, 24 16.5"
         fill="none"
         stroke="var(--c-on-accent)"
-        strokeWidth="2.9"
+        strokeWidth="3.1"
         strokeLinecap="round"
       />
       <path
-        d="M23.2 22.4 C 17.6 22.6, 13.8 19.2, 13.6 13.6 C 19.2 13.8, 22.9 17.2, 23.2 22.4 Z"
+        d="M22.9 26 C 16.2 26.2, 11.7 22.2, 11.5 15.5 C 18.2 15.7, 22.6 19.4, 22.9 26 Z"
         fill="var(--c-on-accent)"
       />
       <path
-        d="M24.8 18 C 30.4 18.2, 34.2 14.8, 34.4 9.2 C 28.8 9.4, 25.1 12.8, 24.8 18 Z"
+        d="M25.1 20.6 C 31.8 20.8, 36.3 16.6, 36.5 10 C 29.8 10.2, 25.4 14, 25.1 20.6 Z"
         fill="var(--c-on-accent)"
         opacity="0.86"
       />
