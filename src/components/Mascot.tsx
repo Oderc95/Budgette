@@ -68,8 +68,8 @@ export function Mascot({ stageIndex, size = 160, animate = true }: { stageIndex:
         />
       )}
 
-      {/* Sol */}
-      <ellipse cx="60" cy={baseY + 8} rx="42" ry="6" fill="var(--c-surface-3)" />
+      {/* Sol : l'ombre porte au pied du pot, pas à mi-hauteur */}
+      <ellipse cx="60" cy={hasPot ? 113 : 104} rx="42" ry="6" fill="var(--c-surface-3)" />
 
       {/* Arbres compagnons, en arrière-plan */}
       {Array.from({ length: companions }).map((_, k) => {
@@ -87,28 +87,11 @@ export function Mascot({ stageIndex, size = 160, animate = true }: { stageIndex:
         )
       })}
 
-      {/* Pot en terre cuite, jusqu'au stade « arbuste » */}
-      {hasPot && (
-        <g>
-          <path d="M42 92 L46 116 H74 L78 92 Z" fill={POT} opacity="0.9" />
-          <rect x="39" y="86" width="42" height="9" rx="3.5" fill={POT} />
-          <path d="M46 116 H74 L73 112 H47 Z" fill="var(--c-text)" opacity="0.08" />
-        </g>
-      )}
-      {!hasPot && <path d="M40 100 Q60 90 80 100 L80 104 H40 Z" fill="var(--c-mint-soft)" />}
-
-      {/* Terre */}
-      {hasPot && <ellipse cx="60" cy="90" rx="19" ry="4.5" fill="var(--c-text)" opacity="0.16" />}
-
-      {/* Graine, avant l'apparition de la tige */}
-      {i === 0 && (
-        <motion.ellipse
-          cx="60" cy="88" rx="6" ry="4.6" fill={POT} opacity="0.85"
-          animate={animate ? { cy: [88, 86.5, 88] } : undefined}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
-
+      {/*
+        La tige pousse derrière le pot : sa base disparaît sous le rebord et la
+        terre, comme une plante sort réellement de son pot — devant, les
+        feuilles basses chevauchaient le rebord.
+      */}
       {/* Tige et couronne, animées d'un léger balancement */}
       <motion.g
         style={{ originX: '60px', originY: `${baseY}px` }}
@@ -162,6 +145,29 @@ export function Mascot({ stageIndex, size = 160, animate = true }: { stageIndex:
           )
         })}
       </motion.g>
+
+      {/* Pot en terre cuite, jusqu'au stade « arbuste » */}
+      {hasPot && (
+        <g>
+          <path d="M42 92 L46 116 H74 L78 92 Z" fill={POT} opacity="0.9" />
+          <rect x="39" y="86" width="42" height="9" rx="3.5" fill={POT} />
+          <path d="M46 116 H74 L73 112 H47 Z" fill="var(--c-text)" opacity="0.08" />
+        </g>
+      )}
+      {!hasPot && <path d="M40 100 Q60 90 80 100 L80 104 H40 Z" fill="var(--c-mint-soft)" />}
+
+      {/* Terre */}
+      {hasPot && <ellipse cx="60" cy="90" rx="19" ry="4.5" fill="var(--c-text)" opacity="0.16" />}
+
+      {/* Graine, avant l'apparition de la tige */}
+      {i === 0 && (
+        <motion.ellipse
+          cx="60" cy="88" rx="6" ry="4.6" fill={POT} opacity="0.85"
+          animate={animate ? { cy: [88, 86.5, 88] } : undefined}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+
 
       {birds && (
         <g stroke={LEAF_DARK} strokeWidth="1.4" fill="none" strokeLinecap="round" opacity="0.7">

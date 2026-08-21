@@ -8,6 +8,7 @@ import { Button, Card, Chip } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { Confetti } from '../components/Confetti'
+import { MonthDonut } from '../components/MonthDonut'
 import { addMonths, euro, euroSigned, monthKey, monthLabel } from '../lib/format'
 import type { Flow } from '../domain/types'
 
@@ -138,28 +139,33 @@ export function MonthEntry() {
         <Card className="relative">
           {celebrate && <Confetti />}
           {/*
-            Sur mobile la synthèse reste affichée pendant la saisie, mais en
-            2 × 2 serré : empilée, elle recouvrait presque la moitié de
-            l'écran et il ne restait plus de place pour saisir quoi que ce soit.
+            L'anneau montre la répartition d'un coup d'œil, les quatre chiffres
+            la précisent. L'ensemble reste bas : sur mobile, cette synthèse est
+            collante et ne doit jamais recouvrir la saisie qu'elle résume.
           */}
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[inherit] bg-line sm:grid-cols-4">
-            {[
-              { label: 'Revenus', value: euro(summary.totals.income), tone: 'mint' as const },
-              { label: 'Charges + dettes', value: euro(summary.totals.fixed + summary.totals.debt), tone: 'indigo' as const },
-              { label: 'Reste à vivre', value: euro(summary.livingAllowance), tone: 'amber' as const },
-              {
-                label: 'Fin de mois',
-                value: euroSigned(summary.endOfMonth),
-                tone: summary.endOfMonth >= 0 ? ('mint' as const) : ('berry' as const),
-              },
-            ].map((cell) => (
-              <div key={cell.label} className="bg-surface px-3 py-2 sm:px-4 sm:py-3.5">
-                <p className="eyebrow text-[0.58rem] sm:text-[0.68rem]">{cell.label}</p>
-                <p className={clsx('tabular mt-0.5 font-display text-base leading-none sm:mt-1 sm:text-xl', TONE[cell.tone].text)}>
-                  {cell.value}
-                </p>
-              </div>
-            ))}
+          <div className="flex items-center gap-2 px-3 py-2 sm:gap-4 sm:px-5 sm:py-3">
+            <div className="shrink-0">
+              <MonthDonut summary={summary} />
+            </div>
+            <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-4 sm:gap-x-4">
+              {[
+                { label: 'Revenus', value: euro(summary.totals.income), tone: 'mint' as const },
+                { label: 'Charges + dettes', value: euro(summary.totals.fixed + summary.totals.debt), tone: 'indigo' as const },
+                { label: 'Reste à vivre', value: euro(summary.livingAllowance), tone: 'amber' as const },
+                {
+                  label: 'Fin de mois',
+                  value: euroSigned(summary.endOfMonth),
+                  tone: summary.endOfMonth >= 0 ? ('mint' as const) : ('berry' as const),
+                },
+              ].map((cell) => (
+                <div key={cell.label} className="min-w-0">
+                  <p className="eyebrow truncate text-[0.58rem] sm:text-[0.68rem]">{cell.label}</p>
+                  <p className={clsx('tabular mt-0.5 font-display text-base leading-none sm:text-xl', TONE[cell.tone].text)}>
+                    {cell.value}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </Card>
       </div>

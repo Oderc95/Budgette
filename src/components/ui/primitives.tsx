@@ -178,7 +178,9 @@ export function Progress({
         initial={animate ? { width: 0 } : false}
         whileInView={{ width: `${clamped * 100}%` }}
         viewport={{ once: true }}
-        transition={{ type: 'spring', stiffness: 70, damping: 18, delay: 0.1 }}
+        // Interpolation amortie, jamais un ressort : un ressort dépasse la
+        // cible puis redescend, et une jauge qui recule ment sur sa valeur.
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
       >
         {glow && <span className="shimmer absolute inset-0 rounded-full" />}
       </motion.div>
@@ -219,7 +221,7 @@ export function Dial({
           initial={{ strokeDashoffset: circumference }}
           whileInView={{ strokeDashoffset: circumference * (1 - clamped) }}
           viewport={{ once: true }}
-          transition={{ type: 'spring', stiffness: 45, damping: 15, delay: 0.15 }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">{children}</div>

@@ -149,6 +149,12 @@ export function Layout() {
   }
   const direction = trace.direction
 
+  // Le routeur par ancre ne remet pas le défilement à zéro : arriver sur un
+  // écran en plein milieu de page désoriente, on repart toujours du haut.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
   return (
     <>
       <Ambient />

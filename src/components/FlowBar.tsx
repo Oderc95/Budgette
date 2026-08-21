@@ -24,7 +24,7 @@ export function FlowBar({ totals }: { totals: FlowTotals }) {
               className={clsx(TONE[FLOW_META[slice.flow].tone].solid, 'h-full first:rounded-l-full')}
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, slice.share * 100)}%` }}
-              transition={{ type: 'spring', stiffness: 80, damping: 18 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               title={`${FLOW_META[slice.flow].label} — ${euro(slice.amount)}`}
             />
           ))}

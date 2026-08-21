@@ -66,7 +66,7 @@ export function ChallengeCard({
           <span
             className={clsx(
               'flex items-center gap-1.5 font-display text-[1rem] leading-tight transition',
-              done ? clsx(tone.deep, 'line-through decoration-1 decoration-current/40') : 'text-ink',
+              done ? tone.deep : 'text-ink',
             )}
           >
             {featured && !done && (
@@ -114,7 +114,7 @@ export function ChallengeCard({
               className={clsx('block h-full rounded-full', tone.solid)}
               initial={{ width: 0 }}
               animate={{ width: `${ratio * 100}%` }}
-              transition={{ type: 'spring', stiffness: 90, damping: 18 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             />
           </span>
         )}
