@@ -16,5 +16,19 @@ export default defineConfig({
     outDir: singleFile ? 'dist-artifact' : 'dist',
     // Le prototype tient dans un seul fichier : pas de découpage ni de sourcemaps.
     sourcemap: !singleFile,
+    rollupOptions: singleFile
+      ? undefined
+      : {
+          output: {
+            // Les graphiques et les animations pèsent autant que le reste de
+            // l'application réunie. Les isoler laisse le navigateur les garder
+            // en cache d'une visite à l'autre, alors que le code applicatif
+            // change à chaque déploiement.
+            manualChunks: (id: string) => {
+              if (id.includes('/node_modules/recharts/')) return 'charts'
+              if (id.includes('/node_modules/framer-motion/')) return 'motion'
+            },
+          },
+        },
   },
 })
