@@ -2,7 +2,7 @@
 
 ## Phase 1 — Prototype d'interface *(livrée)*
 
-Application navigable, données fictives calquées sur des relevés réels, authentification simulée.
+Application navigable, jeu de démonstration entièrement fictif, authentification simulée.
 Objectif : valider l'ergonomie et le ton avant d'écrire la moindre migration de base de données.
 
 - [x] Design system botanique, thèmes clair et sombre

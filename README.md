@@ -53,6 +53,7 @@ npm run typecheck    # vérification des types
 npm run build        # SPA prêt à héberger, dans dist/
 npm run build:artifact  # fichier HTML autonome, dans dist-artifact/
 node scripts/smoke.mjs  # parcours des écrans, captures, contrôle du responsive
+node scripts/verifier-donnees.mjs  # cohérence du jeu de démonstration
 ```
 
 ## Hébergement
@@ -96,6 +97,20 @@ revalider les calculs sensibles, et pourra être réutilisée telle quelle par u
   et le thème sombre se limite à une redéfinition de ces variables.
 - **Zustand** avec persistance tolérante aux pannes : en navigation privée, l'accès au stockage
   local peut lever une exception ; l'application continue alors de fonctionner sans persistance.
+
+## Le jeu de démonstration
+
+Le profil est celui de Camille Roussel, 31 ans, graphiste salariée à Nantes. Rien n'est repris d'un
+relevé réel : les montants sont construits pour raconter une trajectoire que l'interface doit savoir
+montrer — janvier dans le rouge, découvert éteint en mars, 430 € de soins dentaires en mai,
+augmentation en juin, crédit soldé en juillet, et un mois d'août sans aucune dette.
+
+Ces données sont lues par des écrans qui en dérivent chacun leurs propres chiffres. Une incohérence
+entre eux ne casse rien : elle affiche deux montants différents pour la même chose, ce qui ne se voit
+qu'à la lecture attentive. `scripts/verifier-donnees.mjs` recharge donc le jeu avec les vraies
+fonctions du domaine et vérifie les liens qu'aucun type n'exprime — versements des poches contre
+lignes d'épargne, avancement des objectifs contre solde des poches, XP contre niveau annoncé,
+comptes du journal d'audit contre liste des comptes.
 
 ## Design
 
