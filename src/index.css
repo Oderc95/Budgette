@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap');
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Budgette — jetons de design « botanique cosy »
+   Palette dérivée de l'infographie « Idées d'objectifs financiers » :
+   crème, sauge, olive profond, or. Chaque jeton est défini en clair sur :root,
+   puis redéfini pour le thème sombre (préférence système ET choix explicite).
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  --c-bg: #f8f1e7;
+  --c-bg-deep: #f0e5d6;
+  --c-surface: #fffcf7;
+  --c-surface-2: #f7f0e6;
+  --c-surface-3: #efe5d6;
+  --c-border: #e5d9c7;
+  --c-border-strong: #d6c6ad;
+
+  --c-text: #3e4739;
+  --c-text-soft: #6b7462;
+  --c-text-muted: #8f9680;
+
+  --c-sage: #7e9166;
+  --c-sage-deep: #5c6f47;
+  --c-sage-soft: #dde5d1;
+  --c-gold: #b8901f;
+  --c-gold-soft: #f4e6bd;
+  --c-clay: #c06a52;
+  --c-clay-soft: #f4ddd4;
+  --c-sky: #5f8598;
+  --c-sky-soft: #d9e6ec;
+  --c-plum: #8a6693;
+  --c-plum-soft: #e9dcec;
+
+  --c-shadow: 62 71 57;
+  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.05), 0 8px 24px -12px rgb(var(--c-shadow) / 0.16);
+  --shadow-lift: 0 2px 4px rgb(var(--c-shadow) / 0.06), 0 18px 40px -18px rgb(var(--c-shadow) / 0.28);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --c-bg: #171a12;
+    --c-bg-deep: #12140d;
+    --c-surface: #21251b;
+    --c-surface-2: #272c20;
+    --c-surface-3: #2f3527;
+    --c-border: #363c2c;
+    --c-border-strong: #4a5239;
+
+    --c-text: #e9e6da;
+    --c-text-soft: #b3b6a2;
+    --c-text-muted: #878b76;
+
+    --c-sage: #9cb583;
+    --c-sage-deep: #b6cc9f;
+    --c-sage-soft: #2e3a25;
+    --c-gold: #dcbc64;
+    --c-gold-soft: #3d3520;
+    --c-clay: #dd917a;
+    --c-clay-soft: #40281f;
+    --c-sky: #8bb3c6;
+    --c-sky-soft: #223037;
+    --c-plum: #b795bf;
+    --c-plum-soft: #322639;
+
+    --c-shadow: 0 0 0;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -18px rgb(0 0 0 / 0.75);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --c-bg: #171a12;
+  --c-bg-deep: #12140d;
+  --c-surface: #21251b;
+  --c-surface-2: #272c20;
+  --c-surface-3: #2f3527;
+  --c-border: #363c2c;
+  --c-border-strong: #4a5239;
+
+  --c-text: #e9e6da;
+  --c-text-soft: #b3b6a2;
+  --c-text-muted: #878b76;
+
+  --c-sage: #9cb583;
+  --c-sage-deep: #b6cc9f;
+  --c-sage-soft: #2e3a25;
+  --c-gold: #dcbc64;
+  --c-gold-soft: #3d3520;
+  --c-clay: #dd917a;
+  --c-clay-soft: #40281f;
+  --c-sky: #8bb3c6;
+  --c-sky-soft: #223037;
+  --c-plum: #b795bf;
+  --c-plum-soft: #322639;
+
+  --c-shadow: 0 0 0;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -18px rgb(0 0 0 / 0.75);
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-bg-deep: var(--c-bg-deep);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-surface-3: var(--c-surface-3);
+  --color-line: var(--c-border);
+  --color-line-strong: var(--c-border-strong);
+
+  --color-ink: var(--c-text);
+  --color-ink-soft: var(--c-text-soft);
+  --color-ink-muted: var(--c-text-muted);
+
+  --color-sage: var(--c-sage);
+  --color-sage-deep: var(--c-sage-deep);
+  --color-sage-soft: var(--c-sage-soft);
+  --color-gold: var(--c-gold);
+  --color-gold-soft: var(--c-gold-soft);
+  --color-clay: var(--c-clay);
+  --color-clay-soft: var(--c-clay-soft);
+  --color-sky: var(--c-sky);
+  --color-sky-soft: var(--c-sky-soft);
+  --color-plum: var(--c-plum);
+  --color-plum-soft: var(--c-plum-soft);
+
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-hand: 'Caveat', 'Segoe Script', cursive;
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+
+  --radius-xl2: 1.5rem;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv01';
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Motif végétal discret, hérité de l'infographie. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(closest-side, rgb(126 145 102 / 0.10), transparent),
+      radial-gradient(closest-side, rgb(184 144 31 / 0.08), transparent);
+    background-size: 46rem 46rem, 34rem 34rem;
+    background-position: -12rem -14rem, 108% 8%;
+    background-repeat: no-repeat;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background: var(--c-sage-soft);
+    color: var(--c-text);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-sage);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  /* Barres de défilement discrètes, accordées au thème. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-border-strong) transparent;
+  }
+}
+
+@layer components {
+  .card {
+    background-color: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-xl2);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 999px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Respect de la préférence « réduire les animations ». */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
