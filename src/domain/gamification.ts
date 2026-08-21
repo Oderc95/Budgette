@@ -162,7 +162,7 @@ export const DIFFICULTY_META = {
 
 export const RARITY_META = {
   commun: { label: 'Commun', ring: 'ring-line-strong' },
-  rare: { label: 'Rare', ring: 'ring-sky' },
-  épique: { label: 'Épique', ring: 'ring-plum' },
-  légendaire: { label: 'Légendaire', ring: 'ring-gold' },
+  rare: { label: 'Rare', ring: 'ring-indigo' },
+  épique: { label: 'Épique', ring: 'ring-orchid' },
+  légendaire: { label: 'Légendaire', ring: 'ring-amber' },
 } as const

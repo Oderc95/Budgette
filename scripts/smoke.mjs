@@ -36,11 +36,17 @@ async function shoot(page, name, width, height) {
 for (const theme of ['light', 'dark']) {
   const context = await browser.newContext({ colorScheme: theme, locale: 'fr-FR' })
   const page = await context.newPage()
+
+  // L'environnement de test est hors ligne : les requêtes externes (polices)
+  // reçoivent une réponse vide, plutôt que d'échouer et de polluer la console.
+  await page.route('**/*', (route) => {
+    const url = route.request().url()
+    if (url.startsWith('http://localhost:4173')) return route.continue()
+    return route.fulfill({ status: 200, contentType: 'text/css', body: '' })
+  })
+
   page.on('console', (message) => {
-    // Les polices Google sont bloquées dans l'environnement de test hors ligne :
-    // ce n'est pas un défaut de l'application.
-    const isOfflineFont = message.text().includes('ERR_CONNECTION_RESET')
-    if (message.type() === 'error' && !isOfflineFont) errors.push(`[${theme}] console: ${message.text()}`)
+    if (message.type() === 'error') errors.push(`[${theme}] console: ${message.text()}`)
   })
   page.on('pageerror', (error) => errors.push(`[${theme}] pageerror: ${error.message}`))
 
@@ -65,6 +71,14 @@ for (const theme of ['light', 'dark']) {
     await page.waitForTimeout(700)
     await shoot(page, `${name}-${theme}`, 1440, 1800)
   }
+
+  // Notification de récompense : on déclenche un défi puis on capture
+  await page.goto(`${file}#/quetes`)
+  await page.waitForTimeout(700)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.getByText('Journée sans dépense').first().click()
+  await page.waitForTimeout(700)
+  await page.screenshot({ path: `${OUT}/10-notification-${theme}.png` })
 
   // Vue mobile
   await page.goto(`${file}#/`)

@@ -60,7 +60,7 @@ export function MonthEntry() {
     pushToast({
       title: `${copied} lignes reprises`,
       detail: `Depuis ${monthLabel(previous.month)} — ajustez ce qui a changé`,
-      tone: 'sage',
+      tone: 'mint',
       icon: 'Undo2',
     })
   }
@@ -102,11 +102,11 @@ export function MonthEntry() {
               <Icon name="ChevronRight" size={16} />
             </button>
             {locked ? (
-              <Chip tone="sage" icon="Lock">
+              <Chip tone="mint" icon="Lock">
                 Clôturé
               </Chip>
             ) : (
-              <Chip tone="gold" icon="PenLine">
+              <Chip tone="amber" icon="PenLine">
                 En cours
               </Chip>
             )}
@@ -137,13 +137,13 @@ export function MonthEntry() {
           {celebrate && <Confetti />}
           <div className="grid gap-px overflow-hidden rounded-[inherit] bg-line sm:grid-cols-4">
             {[
-              { label: 'Revenus', value: euro(summary.totals.income), tone: 'sage' as const },
-              { label: 'Charges + dettes', value: euro(summary.totals.fixed + summary.totals.debt), tone: 'sky' as const },
-              { label: 'Reste à vivre', value: euro(summary.livingAllowance), tone: 'gold' as const },
+              { label: 'Revenus', value: euro(summary.totals.income), tone: 'mint' as const },
+              { label: 'Charges + dettes', value: euro(summary.totals.fixed + summary.totals.debt), tone: 'indigo' as const },
+              { label: 'Reste à vivre', value: euro(summary.livingAllowance), tone: 'amber' as const },
               {
                 label: 'Fin de mois',
                 value: euroSigned(summary.endOfMonth),
-                tone: summary.endOfMonth >= 0 ? ('sage' as const) : ('clay' as const),
+                tone: summary.endOfMonth >= 0 ? ('mint' as const) : ('berry' as const),
               },
             ].map((cell) => (
               <div key={cell.label} className="bg-surface px-4 py-3.5">
@@ -225,7 +225,7 @@ export function MonthEntry() {
                                   'tabular w-28 rounded-xl border bg-surface px-3 py-2 pr-7 text-right text-[0.9rem] text-ink outline-none transition',
                                   'disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted',
                                   amountOf(category.id) > 0 ? 'border-line-strong' : 'border-line',
-                                  'focus:border-sage',
+                                  'focus:border-brand',
                                 )}
                               />
                               <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-[0.85rem] text-ink-muted">
@@ -242,7 +242,7 @@ export function MonthEntry() {
                             <Icon name="Plus" size={14} />
                             Ajouter une ligne
                             <select
-                              className="ml-auto rounded-lg border border-line bg-surface px-3 py-1.5 text-[0.82rem] text-ink outline-none focus:border-sage"
+                              className="ml-auto rounded-lg border border-line bg-surface px-3 py-1.5 text-[0.82rem] text-ink outline-none focus:border-brand"
                               value=""
                               onChange={(event) => {
                                 if (event.target.value) setLine(month, event.target.value, 1)
@@ -301,14 +301,14 @@ export function MonthEntry() {
               <dl className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-surface-2 p-3">
                   <dt className="eyebrow">Épargné</dt>
-                  <dd className="tabular mt-1 font-display text-xl text-gold">{euro(summary.totals.saving)}</dd>
+                  <dd className="tabular mt-1 font-display text-xl text-amber">{euro(summary.totals.saving)}</dd>
                 </div>
                 <div className="rounded-xl bg-surface-2 p-3">
                   <dt className="eyebrow">Fin de mois</dt>
                   <dd
                     className={clsx(
                       'tabular mt-1 font-display text-xl',
-                      summary.endOfMonth >= 0 ? 'text-sage-deep' : 'text-clay',
+                      summary.endOfMonth >= 0 ? 'text-mint-deep' : 'text-berry',
                     )}
                   >
                     {euroSigned(summary.endOfMonth)}
@@ -323,7 +323,7 @@ export function MonthEntry() {
                     key={mood.value}
                     type="button"
                     onClick={() => handleClose(mood.value)}
-                    className="flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface p-2.5 transition hover:border-sage hover:bg-sage-soft"
+                    className="flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface p-2.5 transition hover:border-brand hover:bg-brand-soft"
                   >
                     <Icon name={mood.icon} size={18} className="text-ink-soft" />
                     <span className="text-center text-[0.65rem] leading-tight text-ink-muted">{mood.label}</span>

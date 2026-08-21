@@ -41,7 +41,7 @@ interface Toast {
   id: number
   title: string
   detail?: string
-  tone: 'sage' | 'gold' | 'clay' | 'sky' | 'plum'
+  tone: 'mint' | 'amber' | 'berry' | 'indigo' | 'orchid'
   icon?: string
 }
 
@@ -70,6 +70,7 @@ interface AppState {
   closeMonth: (month: MonthKey, mood: 1 | 2 | 3 | 4 | 5, note?: string) => void
   reopenMonth: (month: MonthKey) => void
   toggleChallenge: (challengeId: string) => void
+  setStrategy: (strategyId: string) => void
   addGoal: (goal: Goal) => void
   removeGoal: (goalId: string) => void
   contributeToPocket: (pocketId: string, month: MonthKey, amount: number) => void
@@ -231,6 +232,9 @@ export const useApp = create<AppState>()(
         }
       },
 
+      setStrategy: (strategyId) =>
+        set((state) => ({ profile: { ...state.profile, strategyId } })),
+
       addGoal: (goal) => set((state) => ({ goals: [...state.goals, goal] })),
       removeGoal: (goalId) => set((state) => ({ goals: state.goals.filter((g) => g.id !== goalId) })),
 
@@ -250,14 +254,20 @@ export const useApp = create<AppState>()(
 
       grantXp: (amount, reason) => {
         set((state) => ({ profile: { ...state.profile, xp: state.profile.xp + amount } }))
-        get().pushToast({ title: `+${amount} XP`, detail: reason, tone: 'gold', icon: 'Sparkles' })
+        get().pushToast({ title: `+${amount} XP`, detail: reason, tone: 'amber', icon: 'Sparkles' })
       },
 
       pushToast: (toast) => {
         toastId += 1
         const id = toastId
-        set((state) => ({ toasts: [...state.toasts, { ...toast, id }] }))
-        window.setTimeout(() => get().dismissToast(id), 4200)
+        set((state) => {
+          // Une notification identique déjà visible est remplacée plutôt
+          // qu'empilée : cliquer cinq fois sur une stratégie ne doit pas
+          // produire cinq bandeaux superposés.
+          const others = state.toasts.filter((t) => !(t.title === toast.title && t.detail === toast.detail))
+          return { toasts: [...others, { ...toast, id }].slice(-3) }
+        })
+        window.setTimeout(() => get().dismissToast(id), 4600)
       },
 
       dismissToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),

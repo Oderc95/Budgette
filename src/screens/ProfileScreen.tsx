@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import clsx from 'clsx'
 import { useApp, type ThemeChoice } from '../store/useApp'
 import { STRATEGIES, STRATEGY_BY_ID } from '../domain/strategy'
@@ -27,7 +26,8 @@ export function ProfileScreen() {
   const signOut = useApp((s) => s.signOut)
   const resetDemo = useApp((s) => s.resetDemo)
   const pushToast = useApp((s) => s.pushToast)
-  const [strategyId, setStrategyId] = useState(profile.strategyId)
+  const setStrategy = useApp((s) => s.setStrategy)
+  const strategyId = profile.strategyId
 
   const strategy = STRATEGY_BY_ID[strategyId]
 
@@ -40,20 +40,20 @@ export function ProfileScreen() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Votre compte" icon="Users" tone="sage" />
+          <CardHeader title="Votre compte" icon="Users" tone="mint" />
           <div className="px-5 pb-5">
             <div className="flex items-center gap-4">
-              <span className="grid size-14 place-items-center rounded-2xl bg-sage text-xl font-bold text-[#fffcf7]">
+              <span className="grid size-14 place-items-center rounded-2xl bg-brand text-xl font-bold text-on-accent">
                 {profile.displayName.slice(0, 1).toUpperCase()}
               </span>
               <div className="min-w-0">
                 <p className="font-display text-xl leading-tight text-ink">{profile.displayName}</p>
                 <p className="truncate text-[0.85rem] text-ink-muted">{profile.email}</p>
                 <p className="mt-1 flex flex-wrap items-center gap-1.5">
-                  <Chip tone={profile.role === 'admin' ? 'plum' : 'sage'} icon={profile.role === 'admin' ? 'Shield' : 'Leaf'}>
+                  <Chip tone={profile.role === 'admin' ? 'orchid' : 'mint'} icon={profile.role === 'admin' ? 'Shield' : 'Leaf'}>
                     {profile.role === 'admin' ? 'Administrateur' : 'Membre'}
                   </Chip>
-                  <Chip tone="sky" icon="CalendarDays">
+                  <Chip tone="indigo" icon="CalendarDays">
                     Depuis le {dateLabel(profile.createdAt)}
                   </Chip>
                 </p>
@@ -75,7 +75,7 @@ export function ProfileScreen() {
         </Card>
 
         <Card>
-          <CardHeader title="Apparence" hint="Le thème suit votre système par défaut" icon="Sun" tone="gold" />
+          <CardHeader title="Apparence" hint="Le thème suit votre système par défaut" icon="Sun" tone="amber" />
           <div className="px-5 pb-5">
             <div className="grid grid-cols-3 gap-2">
               {THEMES.map((item) => (
@@ -85,7 +85,7 @@ export function ProfileScreen() {
                   onClick={() => setTheme(item.value)}
                   className={clsx(
                     'flex flex-col items-center gap-2 rounded-2xl border p-4 transition',
-                    theme === item.value ? 'border-sage bg-sage-soft text-sage-deep' : 'border-line bg-surface text-ink-soft hover:bg-surface-2',
+                    theme === item.value ? 'border-brand bg-brand-soft text-brand-deep' : 'border-line bg-surface text-ink-soft hover:bg-surface-2',
                   )}
                 >
                   <Icon name={item.icon} size={19} />
@@ -110,7 +110,7 @@ export function ProfileScreen() {
           title="Votre stratégie"
           hint="Elle oriente les défis mis en avant et la répartition conseillée"
           icon="Target"
-          tone="sky"
+          tone="indigo"
         />
         <div className="px-5 pb-5">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -119,15 +119,15 @@ export function ProfileScreen() {
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  setStrategyId(item.id)
-                  pushToast({ title: 'Stratégie mise à jour', detail: item.name, tone: 'sage', icon: 'Target' })
+                  setStrategy(item.id)
+                  pushToast({ title: 'Stratégie mise à jour', detail: item.name, tone: 'mint', icon: 'Target' })
                 }}
                 className={clsx(
                   'rounded-2xl border p-4 text-left transition',
-                  strategyId === item.id ? 'border-sage bg-sage-soft' : 'border-line bg-surface hover:bg-surface-2',
+                  strategyId === item.id ? 'border-brand bg-brand-soft' : 'border-line bg-surface hover:bg-surface-2',
                 )}
               >
-                <p className={clsx('font-display text-[1.02rem]', strategyId === item.id ? 'text-sage-deep' : 'text-ink')}>
+                <p className={clsx('font-display text-[1.02rem]', strategyId === item.id ? 'text-brand-deep' : 'text-ink')}>
                   {item.name}
                 </p>
                 <p className="tabular mt-1 text-[0.75rem] text-ink-muted">
@@ -149,13 +149,13 @@ export function ProfileScreen() {
           title="Vos données"
           hint="Traitées en Europe, sous votre contrôle"
           icon="Shield"
-          tone="plum"
+          tone="orchid"
         />
         <div className="px-5 pb-5">
           <div className="grid gap-3 sm:grid-cols-2">
             {RIGHTS.map((right) => (
               <div key={right.title} className="rounded-2xl border border-line bg-surface-2 p-4">
-                <span className="grid size-9 place-items-center rounded-xl bg-surface text-plum">
+                <span className="grid size-9 place-items-center rounded-xl bg-surface text-orchid">
                   <Icon name={right.icon} size={17} />
                 </span>
                 <p className="mt-2.5 text-[0.88rem] font-semibold text-ink">{right.title}</p>
@@ -168,15 +168,15 @@ export function ProfileScreen() {
             <p className="text-[0.85rem] font-semibold text-ink">Ce que Budgette ne fait pas</p>
             <ul className="mt-2 flex flex-col gap-1.5 text-[0.82rem] leading-snug text-ink-soft">
               <li className="flex gap-2">
-                <Icon name="X" size={14} className="mt-0.5 shrink-0 text-clay" />
+                <Icon name="X" size={14} className="mt-0.5 shrink-0 text-berry" />
                 Aucune connexion à votre banque, aucun identifiant bancaire demandé ou stocké.
               </li>
               <li className="flex gap-2">
-                <Icon name="X" size={14} className="mt-0.5 shrink-0 text-clay" />
+                <Icon name="X" size={14} className="mt-0.5 shrink-0 text-berry" />
                 Aucune revente de données, aucun profilage publicitaire.
               </li>
               <li className="flex gap-2">
-                <Icon name="X" size={14} className="mt-0.5 shrink-0 text-clay" />
+                <Icon name="X" size={14} className="mt-0.5 shrink-0 text-berry" />
                 Aucun conseil en investissement : Budgette est un outil de suivi et de pédagogie budgétaire.
               </li>
             </ul>

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-const COLORS = ['var(--c-sage)', 'var(--c-gold)', 'var(--c-clay)', 'var(--c-sky)', 'var(--c-plum)']
+const COLORS = ['var(--c-mint)', 'var(--c-amber)', 'var(--c-berry)', 'var(--c-indigo)', 'var(--c-orchid)']
 
 /**
  * Pluie de confettis, purement décorative.

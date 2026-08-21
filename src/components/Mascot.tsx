@@ -10,10 +10,10 @@ import { GROWTH_STAGES } from '../domain/gamification'
  * donné soit toujours identique d'une session à l'autre.
  */
 
-const LEAF = 'var(--c-sage)'
-const LEAF_DARK = 'var(--c-sage-deep)'
-const POT = 'var(--c-clay)'
-const FRUIT = 'var(--c-gold)'
+const LEAF = 'var(--c-mint)'
+const LEAF_DARK = 'var(--c-mint-deep)'
+const POT = 'var(--c-brand)'
+const FRUIT = 'var(--c-amber)'
 
 function Leaf({ x, y, angle, scale = 1, dark = false }: { x: number; y: number; angle: number; scale?: number; dark?: boolean }) {
   return (
@@ -60,7 +60,7 @@ export function Mascot({ stageIndex, size = 160, animate = true }: { stageIndex:
           cx="60"
           cy="52"
           r={44}
-          fill="var(--c-gold)"
+          fill="var(--c-amber)"
           style={{ originX: '60px', originY: '52px' }}
           initial={{ opacity: 0.08, scale: 0.96 }}
           animate={animate ? { opacity: [0.08, 0.16, 0.08], scale: [0.96, 1.04, 0.96] } : { opacity: 0.12, scale: 1 }}
@@ -95,7 +95,7 @@ export function Mascot({ stageIndex, size = 160, animate = true }: { stageIndex:
           <path d="M46 116 H74 L73 112 H47 Z" fill="var(--c-text)" opacity="0.08" />
         </g>
       )}
-      {!hasPot && <path d="M40 100 Q60 90 80 100 L80 104 H40 Z" fill="var(--c-sage-soft)" />}
+      {!hasPot && <path d="M40 100 Q60 90 80 100 L80 104 H40 Z" fill="var(--c-mint-soft)" />}
 
       {/* Terre */}
       {hasPot && <ellipse cx="60" cy="90" rx="19" ry="4.5" fill="var(--c-text)" opacity="0.16" />}

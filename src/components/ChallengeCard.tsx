@@ -7,7 +7,15 @@ import { TONE } from './ui/tone'
 import { DIFFICULTY_META, streakMultiplier } from '../domain/gamification'
 
 /** Carte de défi, cochable. La progression partielle reste visible. */
-export function ChallengeCard({ challenge, compact = false }: { challenge: Challenge; compact?: boolean }) {
+export function ChallengeCard({
+  challenge,
+  compact = false,
+  featured = false,
+}: {
+  challenge: Challenge
+  compact?: boolean
+  featured?: boolean
+}) {
   const progress = useChallengeState(challenge.id)
   const toggle = useApp((s) => s.toggleChallenge)
   const streak = useApp((s) => s.profile.streak.current)
@@ -21,33 +29,48 @@ export function ChallengeCard({ challenge, compact = false }: { challenge: Chall
     <motion.button
       type="button"
       onClick={() => toggle(challenge.id)}
-      whileTap={{ scale: 0.985 }}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 24 }}
       aria-pressed={done}
       className={clsx(
         'group relative flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition',
         done ? clsx(tone.bg, tone.border) : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2',
+        featured && !done && 'border-brand/40 ring-1 ring-brand/20',
       )}
     >
-      <span
+      <motion.span
+        key={done ? 'done' : 'todo'}
         className={clsx(
-          'grid size-10 shrink-0 place-items-center rounded-xl transition',
-          done ? clsx(tone.solid, 'text-[#fffcf7]') : clsx(tone.bg, tone.text),
+          'grid size-10 shrink-0 place-items-center rounded-xl transition-colors',
+          done ? clsx(tone.solid, 'text-on-accent') : clsx(tone.bg, tone.deep),
         )}
+        initial={{ scale: 0.6, rotate: done ? -30 : 0 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 480, damping: 13 }}
       >
         <Icon name={done ? 'Check' : challenge.icon} size={19} />
-      </span>
+      </motion.span>
 
       <span className="min-w-0 flex-1">
         <span className="flex items-start justify-between gap-2">
           <span
             className={clsx(
-              'block font-display text-[1rem] leading-tight transition',
-              done ? clsx(tone.text, 'line-through decoration-1 decoration-current/40') : 'text-ink',
+              'flex items-center gap-1.5 font-display text-[1rem] leading-tight transition',
+              done ? clsx(tone.deep, 'line-through decoration-1 decoration-current/40') : 'text-ink',
             )}
           >
+            {featured && !done && (
+              <Icon name="Sparkles" size={14} className="shrink-0 text-brand" aria-label="Recommandé par votre stratégie" />
+            )}
             {challenge.title}
           </span>
-          <span className={clsx('tabular chip shrink-0', done ? 'bg-gold-soft text-gold' : 'bg-surface-2 text-ink-muted')}>
+          <span
+            className={clsx(
+              'tabular chip shrink-0 transition-colors',
+              done ? 'bg-amber-soft text-amber-deep' : 'bg-surface-2 text-ink-muted',
+            )}
+          >
             +{Math.round(challenge.xp * (done ? 1 : multiplier))} XP
           </span>
         </span>

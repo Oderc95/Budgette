@@ -33,7 +33,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
         id: 'empty',
         title: 'Le mois est encore vierge',
         body: "Saisissez vos revenus et vos charges fixes : deux minutes suffisent pour obtenir une première photo.",
-        tone: 'sage',
+        tone: 'mint',
         icon: 'PenLine',
         action: 'Commencer la saisie',
         weight: 100,
@@ -48,7 +48,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
       id: 'cash',
       title: `${euro(cash.amount)} retirés en espèces`,
       body: "L'argent liquide échappe au suivi : une fois retiré, impossible de savoir où il est passé. Les retraits hors réseau sont en plus facturés à l'unité.",
-      tone: 'clay',
+      tone: 'berry',
       icon: 'Banknote',
       action: 'Relever le défi « Mois sans distributeur »',
       weight: 90,
@@ -70,7 +70,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
         delta < -10
           ? `C'est ${euro(Math.abs(delta))} de moins que votre moyenne des trois derniers mois. La tendance est bonne.`
           : `Soit environ ${euro(delivery.amount / 4)} par semaine. Deux repas cuisinés de plus par semaine libèrent souvent une centaine d'euros par mois.`,
-      tone: delta < -10 ? 'sage' : 'plum',
+      tone: delta < -10 ? 'mint' : 'orchid',
       icon: 'Bike',
       action: delta < -10 ? undefined : 'Relever le défi « Semaine sans livraison »',
       weight: 80,
@@ -83,7 +83,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
       id: 'fixed',
       title: `Vos charges fixes pèsent ${Math.round(summary.fixedRate * 100)} % du revenu`,
       body: "Au-delà de 50 %, la marge de manœuvre devient très mince et le moindre imprévu se paie à découvert. Les charges fixes sont pourtant les plus faciles à renégocier : assurance, téléphonie, énergie.",
-      tone: 'sky',
+      tone: 'indigo',
       icon: 'House',
       action: 'Passer les charges fixes en revue',
       weight: 85,
@@ -96,7 +96,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
       id: 'saving_good',
       title: `${Math.round(summary.savingRate * 100)} % du revenu mis de côté`,
       body: "Au-dessus de 10 %, vous construisez réellement. C'est le pourcentage, pas le montant, qui fait la différence sur la durée.",
-      tone: 'gold',
+      tone: 'amber',
       icon: 'PiggyBank',
       weight: 70,
     })
@@ -105,7 +105,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
       id: 'saving_low',
       title: "L'épargne du mois reste faible",
       body: "Le réflexe qui marche : virer le montant dès la paie, avant de dépenser. Même 25 € par mois installent l'habitude, et c'est l'habitude qui compte.",
-      tone: 'gold',
+      tone: 'amber',
       icon: 'PiggyBank',
       action: 'Programmer un virement automatique',
       weight: 88,
@@ -119,7 +119,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
       id: 'fees',
       title: `${euro(fees.amount)} de frais bancaires`,
       body: "Commissions d'intervention, agios, retraits déplacés : ces frais se déclenchent presque toujours à cause d'un découvert ou d'un retrait hors réseau. Ils sont entièrement évitables.",
-      tone: 'clay',
+      tone: 'berry',
       icon: 'Landmark',
       action: 'Identifier la ligne à l’origine des frais',
       weight: 95,
@@ -132,7 +132,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
       id: 'negative',
       title: `Le mois se termine à ${euro(summary.endOfMonth)}`,
       body: "Repérez le poste qui a dérapé plutôt que de rogner partout : un seul poste explique en général l'essentiel de l'écart.",
-      tone: 'clay',
+      tone: 'berry',
       icon: 'TrendingDown',
       weight: 99,
     })
@@ -153,7 +153,7 @@ export function buildInsights(budgets: MonthBudget[], month: MonthKey): Insight[
           delta < 0
             ? 'Par rapport à votre moyenne des trois derniers mois. Ce sont exactement ces euros-là qui alimentent vos objectifs.'
             : "Par rapport à votre moyenne des trois derniers mois. Rien de grave si c'était prévu ; à surveiller si ça ne l'était pas.",
-        tone: delta < 0 ? 'sage' : 'plum',
+        tone: delta < 0 ? 'mint' : 'orchid',
         icon: delta < 0 ? 'TrendingDown' : 'TrendingUp',
         weight: 60,
       })

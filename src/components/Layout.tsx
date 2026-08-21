@@ -6,7 +6,7 @@ import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Toaster } from './Toaster'
 import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../domain/gamification'
-import { Progress } from './ui/primitives'
+import { Ambient, Progress } from './ui/primitives'
 import { Mascot } from './Mascot'
 import { monthKey } from '../lib/format'
 
@@ -49,7 +49,7 @@ function LevelSummary({ compact = false }: { compact?: boolean }) {
           </p>
         </div>
       </div>
-      {!compact && <Progress value={level.progress} tone="gold" height={6} label="Progression du niveau" />}
+      {!compact && <Progress value={level.progress} tone="amber" height={6} label="Progression du niveau" />}
     </div>
   )
 }
@@ -57,9 +57,13 @@ function LevelSummary({ compact = false }: { compact?: boolean }) {
 function Brand() {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="grid size-9 place-items-center rounded-xl bg-sage-soft text-sage-deep">
+      <motion.span
+        className="grid size-9 place-items-center rounded-xl brand-gradient text-on-accent shadow-soft"
+        whileHover={{ rotate: -10, scale: 1.1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 12 }}
+      >
         <Icon name="Sprout" size={19} />
-      </span>
+      </motion.span>
       <span className="leading-none">
         <span className="block font-display text-[1.25rem] font-semibold tracking-tight text-ink">Budgette</span>
         <span className="block font-hand text-[0.9rem] text-ink-muted">votre budget, en douceur</span>
@@ -79,7 +83,9 @@ export function Layout() {
   const nav = role === 'admin' ? [...NAV, { to: '/admin', label: 'Admin', icon: 'Shield' }] : NAV
 
   return (
-    <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1400px]">
+    <>
+      <Ambient />
+      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1400px]">
       {/* Navigation latérale — écrans larges */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-5 border-r border-line px-5 py-6 lg:flex">
         <Brand />
@@ -93,7 +99,7 @@ export function Layout() {
               className={({ isActive }) =>
                 clsx(
                   'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.9rem] font-medium transition',
-                  isActive ? 'text-sage-deep' : 'text-ink-soft hover:bg-surface-2 hover:text-ink',
+                  isActive ? 'text-brand-deep' : 'text-ink-soft hover:bg-surface-2 hover:text-ink',
                 )
               }
             >
@@ -102,7 +108,7 @@ export function Layout() {
                   {isActive && (
                     <motion.span
                       layoutId="nav-pill"
-                      className="absolute inset-0 -z-10 rounded-xl bg-sage-soft"
+                      className="absolute inset-0 -z-10 rounded-xl bg-brand-soft"
                       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                     />
                   )}
@@ -116,7 +122,7 @@ export function Layout() {
 
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-3 py-2.5">
-            <Icon name={season.theme.icon} size={16} className="text-sage" />
+            <Icon name={season.theme.icon} size={16} className="text-mint" />
             <span className="min-w-0">
               <span className="block text-[0.78rem] font-semibold leading-tight text-ink">{season.label}</span>
               <span className="block truncate text-[0.7rem] text-ink-muted">{season.theme.blurb}</span>
@@ -132,13 +138,13 @@ export function Layout() {
               )
             }
           >
-            <span className="grid size-8 place-items-center rounded-full bg-sage text-[0.8rem] font-bold text-[#fffcf7]">
+            <span className="grid size-8 place-items-center rounded-full bg-brand text-[0.8rem] font-bold text-on-accent">
               {name.slice(0, 1).toUpperCase()}
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[0.85rem] font-semibold leading-tight text-ink">{name}</span>
               <span className="flex items-center gap-1 text-[0.72rem] text-ink-muted">
-                <Icon name="Flame" size={11} className="text-clay" />
+                <Icon name="Flame" size={11} className="text-berry" />
                 {streak} jours de série
               </span>
             </span>
@@ -151,13 +157,18 @@ export function Layout() {
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/85 px-4 py-3 backdrop-blur lg:hidden">
           <Brand />
           <div className="flex items-center gap-2">
-            <span className="chip bg-clay-soft text-clay">
-              <Icon name="Flame" size={13} />
+            <span className="chip bg-berry-soft text-berry-deep">
+              <motion.span
+                animate={{ scale: [1, 1.18, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <Icon name="Flame" size={13} />
+              </motion.span>
               {streak}
             </span>
             <NavLink
               to="/profil"
-              className="grid size-9 place-items-center rounded-full bg-sage text-[0.85rem] font-bold text-[#fffcf7]"
+              className="grid size-9 place-items-center rounded-full bg-brand text-[0.85rem] font-bold text-on-accent"
               aria-label="Profil"
             >
               {name.slice(0, 1).toUpperCase()}
@@ -187,13 +198,13 @@ export function Layout() {
                 className={({ isActive }) =>
                   clsx(
                     'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.68rem] font-semibold transition',
-                    isActive ? 'text-sage-deep' : 'text-ink-muted',
+                    isActive ? 'text-brand-deep' : 'text-ink-muted',
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={clsx('grid size-8 place-items-center rounded-lg', isActive && 'bg-sage-soft')}>
+                    <span className={clsx('grid size-8 place-items-center rounded-lg', isActive && 'bg-brand-soft')}>
                       <Icon name={item.icon} size={17} />
                     </span>
                     <span className="truncate">{item.label}</span>
@@ -206,6 +217,7 @@ export function Layout() {
       </div>
 
       <Toaster />
-    </div>
+      </div>
+    </>
   )
 }

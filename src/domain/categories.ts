@@ -2,11 +2,11 @@ import type { Category, Flow, Tone } from './types'
 
 /** Libellé et teinte de chaque flux, utilisés partout dans l'interface. */
 export const FLOW_META: Record<Flow, { label: string; short: string; tone: Tone; icon: string }> = {
-  income: { label: 'Revenus', short: 'Revenus', tone: 'sage', icon: 'Sprout' },
-  fixed: { label: 'Charges contraintes', short: 'Charges', tone: 'sky', icon: 'House' },
-  debt: { label: 'Dettes', short: 'Dettes', tone: 'clay', icon: 'Scale' },
-  saving: { label: 'Épargne', short: 'Épargne', tone: 'gold', icon: 'PiggyBank' },
-  discretionary: { label: 'Dépenses plaisir', short: 'Plaisir', tone: 'plum', icon: 'IceCreamCone' },
+  income: { label: 'Revenus', short: 'Revenus', tone: 'mint', icon: 'Sprout' },
+  fixed: { label: 'Charges contraintes', short: 'Charges', tone: 'indigo', icon: 'House' },
+  debt: { label: 'Dettes', short: 'Dettes', tone: 'berry', icon: 'Scale' },
+  saving: { label: 'Épargne', short: 'Épargne', tone: 'amber', icon: 'PiggyBank' },
+  discretionary: { label: 'Dépenses plaisir', short: 'Plaisir', tone: 'orchid', icon: 'IceCreamCone' },
 }
 
 export const FLOW_ORDER: Flow[] = ['income', 'fixed', 'debt', 'saving', 'discretionary']

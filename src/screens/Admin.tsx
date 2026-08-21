@@ -40,7 +40,7 @@ export function Admin() {
             Accès réservé au rôle administrateur. Chaque action est journalisée.
           </p>
         </div>
-        <Chip tone="plum" icon="Shield">
+        <Chip tone="orchid" icon="Shield">
           Rôle administrateur
         </Chip>
       </header>
@@ -53,7 +53,7 @@ export function Admin() {
             onClick={() => setTab(item.id)}
             className={clsx(
               'flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-[0.85rem] font-semibold transition',
-              tab === item.id ? 'border-sage bg-sage-soft text-sage-deep' : 'border-line bg-surface text-ink-soft hover:bg-surface-2',
+              tab === item.id ? 'border-brand bg-brand-soft text-brand-deep' : 'border-line bg-surface text-ink-soft hover:bg-surface-2',
             )}
           >
             <Icon name={item.icon} size={15} />
@@ -65,14 +65,14 @@ export function Admin() {
       {tab === 'overview' && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Comptes" value={String(MOCK_ADMIN_USERS.length)} icon="Users" tone="sage" emphasis />
-            <Stat label="Actifs 30 j" value={String(activeUsers)} icon="Flame" tone="clay" hint="Au moins une saisie" />
-            <Stat label="Rétention 3 mois" value={`${retention} %`} icon="TrendingUp" tone="gold" />
-            <Stat label="Défis publiés" value={String(CHALLENGES.length)} icon="ListChecks" tone="plum" />
+            <Stat label="Comptes" value={String(MOCK_ADMIN_USERS.length)} icon="Users" tone="mint" emphasis />
+            <Stat label="Actifs 30 j" value={String(activeUsers)} icon="Flame" tone="berry" hint="Au moins une saisie" />
+            <Stat label="Rétention 3 mois" value={`${retention} %`} icon="TrendingUp" tone="amber" />
+            <Stat label="Défis publiés" value={String(CHALLENGES.length)} icon="ListChecks" tone="orchid" />
           </div>
 
           <Card>
-            <CardHeader title="Santé du produit" hint="Indicateurs agrégés, jamais nominatifs" icon="HeartPulse" tone="sky" />
+            <CardHeader title="Santé du produit" hint="Indicateurs agrégés, jamais nominatifs" icon="HeartPulse" tone="indigo" />
             <div className="grid gap-4 px-5 pb-5 lg:grid-cols-2">
               {[
                 { label: 'Mois clôturés par utilisateur actif', value: 0.82, hint: '0,82 en moyenne sur août' },
@@ -83,10 +83,10 @@ export function Admin() {
                 <div key={metric.label} className="rounded-2xl border border-line bg-surface-2 p-4">
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="text-[0.85rem] font-semibold text-ink">{metric.label}</p>
-                    <p className="tabular font-display text-lg text-sage-deep">{Math.round(metric.value * 100)} %</p>
+                    <p className="tabular font-display text-lg text-mint-deep">{Math.round(metric.value * 100)} %</p>
                   </div>
                   <div className="mt-2">
-                    <Progress value={metric.value} tone="sage" height={6} />
+                    <Progress value={metric.value} tone="mint" height={6} />
                   </div>
                   <p className="mt-1.5 text-[0.75rem] text-ink-muted">{metric.hint}</p>
                 </div>
@@ -95,7 +95,7 @@ export function Admin() {
           </Card>
 
           <Card>
-            <CardHeader title="Fonctionnalités" hint="Activation progressive, réversible à tout moment" icon="Settings" tone="gold" />
+            <CardHeader title="Fonctionnalités" hint="Activation progressive, réversible à tout moment" icon="Settings" tone="amber" />
             <ul className="flex flex-col gap-2 px-5 pb-5">
               {flags.map((flag) => (
                 <li key={flag.id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4">
@@ -122,7 +122,7 @@ export function Admin() {
                     }
                     className={clsx(
                       'relative h-6 w-11 shrink-0 rounded-full transition',
-                      flag.enabled ? 'bg-sage' : 'bg-surface-3',
+                      flag.enabled ? 'bg-mint' : 'bg-surface-3',
                     )}
                   >
                     <span
@@ -145,13 +145,13 @@ export function Admin() {
             title="Comptes"
             hint="Les données budgétaires ne sont jamais consultables depuis la console"
             icon="Users"
-            tone="sage"
+            tone="mint"
             action={
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Rechercher…"
-                className="w-40 rounded-lg border border-line bg-surface px-3 py-1.5 text-[0.82rem] text-ink outline-none focus:border-sage sm:w-56"
+                className="w-40 rounded-lg border border-line bg-surface px-3 py-1.5 text-[0.82rem] text-ink outline-none focus:border-brand sm:w-56"
               />
             }
           />
@@ -171,7 +171,7 @@ export function Admin() {
                   <tr key={user.id} className="border-b border-line/60 last:border-0">
                     <td className="px-2 py-3">
                       <div className="flex items-center gap-2.5">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sage-soft text-[0.78rem] font-bold text-sage-deep">
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-mint-soft text-[0.78rem] font-bold text-mint-deep">
                           {user.name.slice(0, 1)}
                         </span>
                         <span className="min-w-0">
@@ -181,14 +181,14 @@ export function Admin() {
                       </div>
                     </td>
                     <td className="px-2 py-3">
-                      <Chip tone={user.role === 'admin' ? 'plum' : 'sage'}>{user.role === 'admin' ? 'Admin' : 'Membre'}</Chip>
+                      <Chip tone={user.role === 'admin' ? 'orchid' : 'mint'}>{user.role === 'admin' ? 'Admin' : 'Membre'}</Chip>
                     </td>
                     <td className="tabular px-2 py-3 text-[0.85rem] text-ink">{user.level}</td>
                     <td className="tabular px-2 py-3 text-[0.85rem] text-ink">{user.months}</td>
                     <td className="tabular px-2 py-3 text-[0.8rem] text-ink-muted">{user.joined}</td>
                     <td className="tabular px-2 py-3 text-[0.8rem] text-ink-muted">{user.lastSeen}</td>
                     <td className="px-2 py-3">
-                      <Chip tone={user.status === 'actif' ? 'sage' : user.status === 'inactif' ? 'sky' : 'clay'}>
+                      <Chip tone={user.status === 'actif' ? 'mint' : user.status === 'inactif' ? 'indigo' : 'berry'}>
                         {user.status}
                       </Chip>
                     </td>
@@ -208,7 +208,7 @@ export function Admin() {
       {tab === 'content' && (
         <>
           <Card>
-            <CardHeader title="Catalogue de défis" hint={`${CHALLENGES.length} défis répartis sur quatre cadences`} icon="ListChecks" tone="gold" />
+            <CardHeader title="Catalogue de défis" hint={`${CHALLENGES.length} défis répartis sur quatre cadences`} icon="ListChecks" tone="amber" />
             <div className="grid gap-2 px-5 pb-5 sm:grid-cols-2">
               {CHALLENGES.map((challenge) => (
                 <div key={challenge.id} className="flex items-center gap-3 rounded-xl border border-line bg-surface-2 p-3">
@@ -221,14 +221,14 @@ export function Admin() {
                       {CADENCE_META[challenge.cadence].label} · {challenge.difficulty}
                     </span>
                   </span>
-                  <span className="tabular shrink-0 text-[0.78rem] font-semibold text-gold">+{challenge.xp}</span>
+                  <span className="tabular shrink-0 text-[0.78rem] font-semibold text-amber">+{challenge.xp}</span>
                 </div>
               ))}
             </div>
           </Card>
 
           <Card>
-            <CardHeader title="Catalogue de badges" hint={`${BADGES.length} récompenses`} icon="Trophy" tone="plum" />
+            <CardHeader title="Catalogue de badges" hint={`${BADGES.length} récompenses`} icon="Trophy" tone="orchid" />
             <div className="grid gap-2 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
               {BADGES.map((badge) => (
                 <div key={badge.id} className="flex items-center gap-3 rounded-xl border border-line bg-surface-2 p-3">
@@ -249,7 +249,7 @@ export function Admin() {
       {tab === 'compliance' && (
         <>
           <Card>
-            <CardHeader title="Journal d’audit" hint="Toute action d’administration est tracée et horodatée" icon="FileText" tone="sky" />
+            <CardHeader title="Journal d’audit" hint="Toute action d’administration est tracée et horodatée" icon="FileText" tone="indigo" />
             <ul className="flex flex-col gap-1 px-5 pb-5">
               {MOCK_AUDIT_LOG.map((entry) => (
                 <li key={entry.at} className="flex flex-wrap items-center gap-2 border-b border-line/60 py-3 last:border-0">
@@ -264,7 +264,7 @@ export function Admin() {
           </Card>
 
           <Card>
-            <CardHeader title="Registre des traitements" hint="Base de travail pour l’article 30 du RGPD" icon="Shield" tone="plum" />
+            <CardHeader title="Registre des traitements" hint="Base de travail pour l’article 30 du RGPD" icon="Shield" tone="orchid" />
             <div className="grid gap-3 px-5 pb-5 lg:grid-cols-2">
               {[
                 {

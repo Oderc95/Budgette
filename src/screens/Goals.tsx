@@ -70,7 +70,7 @@ export function Goals() {
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-sage-soft text-sage-deep">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-deep">
                         <Icon name={catalogEntry?.icon ?? 'Target'} size={20} />
                       </span>
                       <div className="min-w-0">
@@ -84,9 +84,9 @@ export function Goals() {
                       type="button"
                       onClick={() => {
                         removeGoal(goal.id)
-                        pushToast({ title: 'Objectif retiré', detail: goal.label, tone: 'clay', icon: 'X' })
+                        pushToast({ title: 'Objectif retiré', detail: goal.label, tone: 'berry', icon: 'X' })
                       }}
-                      className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-muted transition hover:bg-surface-2 hover:text-clay"
+                      className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-muted transition hover:bg-surface-2 hover:text-berry"
                       aria-label={`Retirer l'objectif ${goal.label}`}
                     >
                       <Icon name="X" size={15} />
@@ -95,10 +95,10 @@ export function Goals() {
 
                   <div className="mt-4">
                     <div className="mb-2 flex items-baseline justify-between gap-3">
-                      <span className="tabular font-display text-2xl text-sage-deep">{euro(saved)}</span>
+                      <span className="tabular font-display text-2xl text-mint-deep">{euro(saved)}</span>
                       <span className="tabular text-[0.85rem] text-ink-muted">sur {euro(goal.targetAmount)}</span>
                     </div>
-                    <Progress value={ratio} tone="sage" height={10} />
+                    <Progress value={ratio} tone="mint" height={10} />
                     <p className="mt-1.5 text-[0.75rem] text-ink-muted">{Math.round(ratio * 100)} % du chemin parcouru</p>
                   </div>
 
@@ -120,7 +120,7 @@ export function Goals() {
                   <p
                     className={clsx(
                       'mt-3 flex items-start gap-2 rounded-xl p-3 text-[0.8rem] leading-snug',
-                      projection.feasible ? 'bg-sage-soft text-sage-deep' : 'bg-clay-soft text-clay',
+                      projection.feasible ? 'bg-mint-soft text-mint-deep' : 'bg-berry-soft text-berry-deep',
                     )}
                   >
                     <Icon name={projection.feasible ? 'Check' : 'Info'} size={15} className="mt-0.5 shrink-0" />
@@ -141,7 +141,7 @@ export function Goals() {
           title="Vos poches d’épargne"
           hint="Séparer l’argent par destination évite de piocher dedans sans y penser"
           icon="PiggyBank"
-          tone="gold"
+          tone="amber"
         />
         <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4">
           {pockets.map((pocket) => {
@@ -183,7 +183,7 @@ export function Goals() {
             onCreate={(goal) => {
               addGoal(goal)
               setCreating(false)
-              pushToast({ title: 'Objectif créé', detail: goal.label, tone: 'sage', icon: 'Flag' })
+              pushToast({ title: 'Objectif créé', detail: goal.label, tone: 'mint', icon: 'Flag' })
             }}
           />
         )}
@@ -208,7 +208,7 @@ function Simulators({ fixedMonthly }: { fixedMonthly: number }) {
         title="Simulateurs"
         hint="Deux calculs simples qui aident à décider"
         icon="Telescope"
-        tone="sky"
+        tone="indigo"
       />
       <div className="grid gap-4 px-5 pb-5 lg:grid-cols-2">
         <div className="rounded-2xl border border-line bg-surface-2 p-4">
@@ -224,7 +224,7 @@ function Simulators({ fixedMonthly }: { fixedMonthly: number }) {
                 onClick={() => setMonths(value)}
                 className={clsx(
                   'flex-1 rounded-xl border px-3 py-2 text-[0.82rem] font-semibold transition',
-                  months === value ? 'border-sage bg-sage-soft text-sage-deep' : 'border-line bg-surface text-ink-soft',
+                  months === value ? 'border-brand bg-brand-soft text-brand-deep' : 'border-line bg-surface text-ink-soft',
                 )}
               >
                 {value} mois
@@ -233,7 +233,7 @@ function Simulators({ fixedMonthly }: { fixedMonthly: number }) {
           </div>
           <div className="mt-4 rounded-xl bg-surface p-4">
             <p className="eyebrow">Montant cible</p>
-            <p className="tabular mt-1 font-display text-3xl leading-none text-sage-deep">{euro(target)}</p>
+            <p className="tabular mt-1 font-display text-3xl leading-none text-mint-deep">{euro(target)}</p>
             <p className="mt-2 text-[0.8rem] text-ink-muted">
               Soit {euro(perMonth)} par mois pour y arriver en un an.
             </p>
@@ -248,7 +248,7 @@ function Simulators({ fixedMonthly }: { fixedMonthly: number }) {
           <label className="mt-4 block">
             <span className="flex items-baseline justify-between text-[0.82rem] font-semibold text-ink">
               Montant mensuel
-              <span className="tabular font-display text-lg text-sage-deep">{euro(monthly)}</span>
+              <span className="tabular font-display text-lg text-brand-deep">{euro(monthly)}</span>
             </span>
             <input
               type="range"
@@ -257,13 +257,13 @@ function Simulators({ fixedMonthly }: { fixedMonthly: number }) {
               step={10}
               value={monthly}
               onChange={(event) => setMonthly(Number(event.target.value))}
-              className="mt-2 w-full accent-[var(--c-sage)]"
+              className="mt-2 w-full"
             />
           </label>
           <label className="mt-3 block">
             <span className="flex items-baseline justify-between text-[0.82rem] font-semibold text-ink">
               Pendant
-              <span className="tabular font-display text-lg text-sage-deep">{duration} mois</span>
+              <span className="tabular font-display text-lg text-brand-deep">{duration} mois</span>
             </span>
             <input
               type="range"
@@ -272,12 +272,12 @@ function Simulators({ fixedMonthly }: { fixedMonthly: number }) {
               step={1}
               value={duration}
               onChange={(event) => setDuration(Number(event.target.value))}
-              className="mt-2 w-full accent-[var(--c-sage)]"
+              className="mt-2 w-full"
             />
           </label>
           <div className="mt-4 rounded-xl bg-surface p-4">
             <p className="eyebrow">Vous auriez</p>
-            <p className="tabular mt-1 font-display text-3xl leading-none text-gold">{euro(projected)}</p>
+            <p className="tabular mt-1 font-display text-3xl leading-none text-amber">{euro(projected)}</p>
             <p className="mt-2 text-[0.8rem] text-ink-muted">
               En {monthLabel(addMonths(monthKey(new Date()), duration))}.
             </p>
@@ -333,7 +333,7 @@ function GoalDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (goa
               }}
               className={clsx(
                 'flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-[0.82rem] font-medium transition',
-                kind === item.kind ? 'border-sage bg-sage-soft text-sage-deep' : 'border-line bg-surface text-ink-soft',
+                kind === item.kind ? 'border-brand bg-brand-soft text-brand-deep' : 'border-line bg-surface text-ink-soft',
               )}
             >
               <Icon name={item.icon} size={15} />
@@ -348,14 +348,14 @@ function GoalDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (goa
             value={label}
             onChange={(event) => setLabel(event.target.value)}
             placeholder={entry.label}
-            className="mt-1.5 w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-[0.9rem] text-ink outline-none focus:border-sage"
+            className="mt-1.5 w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-[0.9rem] text-ink outline-none focus:border-brand"
           />
         </label>
 
         <label className="mt-4 block">
           <span className="flex items-baseline justify-between text-[0.85rem] font-semibold text-ink">
             Montant à atteindre
-            <span className="tabular font-display text-lg text-sage-deep">{euro(amount)}</span>
+            <span className="tabular font-display text-lg text-brand-deep">{euro(amount)}</span>
           </span>
           <input
             type="range"
@@ -364,14 +364,14 @@ function GoalDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (goa
             step={100}
             value={amount}
             onChange={(event) => setAmount(Number(event.target.value))}
-            className="mt-2 w-full accent-[var(--c-sage)]"
+            className="mt-2 w-full"
           />
         </label>
 
         <label className="mt-3 block">
           <span className="flex items-baseline justify-between text-[0.85rem] font-semibold text-ink">
             Échéance
-            <span className="tabular font-display text-lg text-sage-deep capitalize">{monthLabel(deadline)}</span>
+            <span className="tabular font-display text-lg text-brand-deep capitalize">{monthLabel(deadline)}</span>
           </span>
           <input
             type="range"
@@ -380,7 +380,7 @@ function GoalDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (goa
             step={1}
             value={months}
             onChange={(event) => setMonths(Number(event.target.value))}
-            className="mt-2 w-full accent-[var(--c-sage)]"
+            className="mt-2 w-full"
           />
         </label>
 

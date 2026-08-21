@@ -88,9 +88,28 @@ revalider les calculs sensibles, et pourra être réutilisée telle quelle par u
 
 ## Design
 
-Palette et vocabulaire visuel dérivés d'une infographie d'épargne fournie par l'utilisateur : papier
-crème, vert sauge, or doux, terracotta. La mascotte est un dessin SVG paramétré par le palier
-atteint : elle passe du grain à la canopée en douze étapes, sans aucune image bitmap.
+Palette « Verger au couchant » : un fond chaud — crème abricotée en clair, aubergine profond en
+sombre — et six accents saturés répartis sur la roue chromatique, calés sur une luminosité et une
+saturation voisines pour cohabiter sans se battre. La mandarine porte l'identité et tous les états
+d'interface (sélection, onglet actif, action principale) ; les cinq autres teintes sont
+sémantiques et ne servent qu'à ça : menthe pour les revenus et le positif, indigo pour les charges
+contraintes, framboise pour les dettes, ambre pour l'épargne, orchidée pour les dépenses plaisir.
+
+La mascotte est un dessin SVG paramétré par le palier atteint : elle passe du grain à la canopée en
+douze étapes, sans aucune image bitmap.
+
+### Le fond est peint sur `#root`, pas seulement sur `body`
+
+Certains hôtes injectent leur propre réinitialisation CSS *après* la feuille de style de la page et
+écrasent le fond du document. La page affiche alors le texte d'un thème sur le fond de l'autre —
+illisible. Le fond est donc peint sur le conteneur de l'application, que rien d'extérieur ne cible.
+
+### Animation
+
+L'animation est portée par les composants de base plutôt que répétée écran par écran : les cartes,
+les barres de progression et les jauges se révèlent à l'entrée dans le champ de vision, les chiffres
+importants défilent jusqu'à leur valeur, et les halos de fond dérivent lentement. Tout se coupe
+automatiquement si le système demande de réduire les mouvements.
 
 ## Feuille de route
 

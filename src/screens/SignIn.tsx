@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useApp } from '../store/useApp'
-import { Button } from '../components/ui/primitives'
+import { Ambient, Button } from '../components/ui/primitives'
 import { Icon } from '../components/Icon'
 import { Mascot } from '../components/Mascot'
 
@@ -19,11 +19,13 @@ export function SignIn() {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
-    <div className="relative z-10 grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+    <>
+      <Ambient />
+      <div className="relative z-10 grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
       {/* Colonne de présentation */}
       <div className="relative hidden flex-col justify-between overflow-hidden border-r border-line bg-surface-2 p-10 lg:flex">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-10 place-items-center rounded-xl bg-sage-soft text-sage-deep">
+          <span className="grid size-10 place-items-center rounded-xl brand-gradient text-on-accent shadow-soft">
             <Icon name="Sprout" size={21} />
           </span>
           <div className="leading-none">
@@ -38,7 +40,7 @@ export function SignIn() {
             <h1 className="font-display text-[2.6rem] leading-[1.08] text-ink">
               Comprendre son budget,
               <br />
-              <span className="text-sage-deep">sans y passer ses soirées.</span>
+              <span className="text-mint-deep">sans y passer ses soirées.</span>
             </h1>
             <p className="mt-4 text-[0.95rem] leading-relaxed text-ink-soft">
               Une saisie par mois, des défis qui rendent l’effort concret, et une trajectoire qui se voit.
@@ -54,7 +56,7 @@ export function SignIn() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 + index * 0.08 }}
               >
-                <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-surface text-sage-deep">
+                <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-surface text-mint-deep">
                   <Icon name={promise.icon} size={16} />
                 </span>
                 <span>
@@ -66,13 +68,13 @@ export function SignIn() {
           </ul>
         </div>
 
-        <p className="text-[0.75rem] text-ink-muted">
+        <p className="relative z-10 max-w-md text-[0.75rem] leading-relaxed text-ink-muted">
           Budgette est un outil de suivi budgétaire et de pédagogie financière. Il ne fournit aucun conseil en
           investissement et ne se connecte à aucun compte bancaire.
         </p>
 
-        <div className="pointer-events-none absolute -bottom-10 right-0 opacity-70">
-          <Mascot stageIndex={7} size={260} />
+        <div className="pointer-events-none absolute -bottom-14 -right-10 opacity-55">
+          <Mascot stageIndex={7} size={280} />
         </div>
       </div>
 
@@ -80,7 +82,7 @@ export function SignIn() {
       <div className="flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span className="grid size-10 place-items-center rounded-xl bg-sage-soft text-sage-deep">
+            <span className="grid size-10 place-items-center rounded-xl brand-gradient text-on-accent shadow-soft">
               <Icon name="Sprout" size={21} />
             </span>
             <div className="leading-none">
@@ -107,14 +109,14 @@ export function SignIn() {
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
                 required
-                className="rounded-xl border border-line bg-surface px-4 py-3 text-[0.9rem] text-ink outline-none transition focus:border-sage"
+                className="rounded-xl border border-line bg-surface px-4 py-3 text-[0.9rem] text-ink outline-none transition focus:border-brand"
               />
             </label>
 
             <label className="flex flex-col gap-1.5">
               <span className="flex items-center justify-between text-[0.8rem] font-semibold text-ink-soft">
                 Mot de passe
-                <button type="button" className="text-[0.75rem] font-medium text-sage-deep underline-offset-2 hover:underline">
+                <button type="button" className="text-[0.75rem] font-medium text-brand-deep underline-offset-2 hover:underline">
                   Oublié ?
                 </button>
               </span>
@@ -125,7 +127,7 @@ export function SignIn() {
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="current-password"
                   required
-                  className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-11 text-[0.9rem] text-ink outline-none transition focus:border-sage"
+                  className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-11 text-[0.9rem] text-ink outline-none transition focus:border-brand"
                 />
                 <button
                   type="button"
@@ -155,7 +157,7 @@ export function SignIn() {
 
           <div className="mt-7 rounded-2xl border border-line bg-surface-2 p-4">
             <p className="flex items-center gap-2 text-[0.8rem] font-semibold text-ink">
-              <Icon name="ShieldCheck" size={15} className="text-sage" />
+              <Icon name="ShieldCheck" size={15} className="text-mint" />
               Prototype — aucune donnée réelle
             </p>
             <p className="mt-1.5 text-[0.78rem] leading-snug text-ink-muted">
@@ -165,6 +167,7 @@ export function SignIn() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

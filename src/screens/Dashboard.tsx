@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
-import { Button, Card, CardHeader, Chip, Dial, Progress, Stat } from '../components/ui/primitives'
+import { AnimatedNumber, Button, Card, CardHeader, Chip, Dial, Progress, Stat } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { Mascot } from '../components/Mascot'
@@ -50,7 +51,7 @@ export function Dashboard() {
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bel après-midi' : 'Bonsoir'
-  const healthTone = health.total >= 80 ? 'sage' : health.total >= 60 ? 'sky' : health.total >= 40 ? 'gold' : 'clay'
+  const healthTone = health.total >= 80 ? 'mint' : health.total >= 60 ? 'indigo' : health.total >= 40 ? 'amber' : 'berry'
 
   return (
     <div className="flex flex-col gap-5">
@@ -68,7 +69,7 @@ export function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Chip tone="clay" icon="Flame">
+          <Chip tone="berry" icon="Flame">
             {profile.streak.current} jours
           </Chip>
           <Link to="/mois">
@@ -86,18 +87,20 @@ export function Dashboard() {
               hint="Répartition du revenu du mois, poste par poste"
               icon="Wallet"
               action={
-                <Link to="/mois" className="text-[0.8rem] font-semibold text-sage-deep hover:underline">
+                <Link to="/mois" className="text-[0.8rem] font-semibold text-brand-deep hover:underline">
                   Détail
                 </Link>
               }
             />
             <div className="px-5 pb-5">
               <div className="mb-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-sage/30 bg-sage-soft p-4">
+                <div className="rounded-2xl border border-mint/30 bg-mint-soft p-4">
                   <p className="eyebrow">Reste à vivre</p>
-                  <p className="tabular mt-1 font-display text-3xl leading-none text-sage-deep">
-                    {euro(summary.livingAllowance)}
-                  </p>
+                  <AnimatedNumber
+                    value={summary.livingAllowance}
+                    format={euro}
+                    className="tabular mt-1 block font-display text-3xl leading-none text-mint-deep"
+                  />
                   <p className="mt-1.5 text-[0.75rem] leading-snug text-ink-muted">
                     Après le loyer, les charges et les dettes. C’est votre vraie marge de manœuvre.
                   </p>
@@ -105,18 +108,18 @@ export function Dashboard() {
                 <div
                   className={clsx(
                     'rounded-2xl border p-4',
-                    summary.endOfMonth >= 0 ? 'border-gold/30 bg-gold-soft' : 'border-clay/30 bg-clay-soft',
+                    summary.endOfMonth >= 0 ? 'border-amber/30 bg-amber-soft' : 'border-berry/30 bg-berry-soft',
                   )}
                 >
                   <p className="eyebrow">Reste en fin de mois</p>
-                  <p
+                  <AnimatedNumber
+                    value={summary.endOfMonth}
+                    format={euroSigned}
                     className={clsx(
-                      'tabular mt-1 font-display text-3xl leading-none',
-                      summary.endOfMonth >= 0 ? 'text-gold' : 'text-clay',
+                      'tabular mt-1 block font-display text-3xl leading-none',
+                      summary.endOfMonth >= 0 ? 'text-amber-deep' : 'text-berry-deep',
                     )}
-                  >
-                    {euroSigned(summary.endOfMonth)}
-                  </p>
+                  />
                   <p className="mt-1.5 text-[0.75rem] leading-snug text-ink-muted">
                     Une fois l’épargne mise de côté et les plaisirs passés.
                   </p>
@@ -126,12 +129,12 @@ export function Dashboard() {
               <FlowBar totals={summary.totals} />
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <Stat label="Revenus" value={euro(summary.totals.income)} icon="Sprout" tone="sage" />
+                <Stat label="Revenus" value={euro(summary.totals.income)} icon="Sprout" tone="mint" />
                 <Stat
                   label="Taux d'épargne"
                   value={percent(summary.savingRate)}
                   icon="PiggyBank"
-                  tone="gold"
+                  tone="amber"
                   hint={summary.savingRate >= 0.1 ? 'Au-dessus du repère de 10 %' : 'Repère conseillé : 10 %'}
                   emphasis={summary.savingRate >= 0.1}
                 />
@@ -139,7 +142,7 @@ export function Dashboard() {
                   label="Charges fixes"
                   value={percent(summary.fixedRate)}
                   icon="House"
-                  tone={summary.fixedRate > 0.5 ? 'clay' : 'sky'}
+                  tone={summary.fixedRate > 0.5 ? 'berry' : 'indigo'}
                   hint={summary.fixedRate > 0.5 ? 'Au-delà du repère de 50 %' : 'Sous le repère de 50 %'}
                   emphasis={summary.fixedRate > 0.5}
                 />
@@ -149,17 +152,19 @@ export function Dashboard() {
 
           {/* Analyses */}
           <Card>
-            <CardHeader title="Ce que disent vos chiffres" hint="Des constats, et un geste à essayer" icon="Telescope" tone="sky" />
+            <CardHeader title="Ce que disent vos chiffres" hint="Des constats, et un geste à essayer" icon="Telescope" tone="indigo" />
             <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2">
               {insights.slice(0, 4).map((insight) => (
-                <article
+                <motion.article
                   key={insight.id}
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 22 }}
                   className={clsx('rounded-2xl border p-4', TONE[insight.tone].bg, TONE[insight.tone].border)}
                 >
                   <div className="flex items-start gap-2.5">
                     <Icon name={insight.icon} size={17} className={clsx('mt-0.5 shrink-0', TONE[insight.tone].text)} />
                     <div className="min-w-0">
-                      <h3 className={clsx('font-display text-[0.98rem] leading-tight', TONE[insight.tone].text)}>
+                      <h3 className={clsx('font-display text-[0.98rem] leading-tight', TONE[insight.tone].deep)}>
                         {insight.title}
                       </h3>
                       <p className="mt-1.5 text-[0.82rem] leading-relaxed text-ink-soft">{insight.body}</p>
@@ -171,14 +176,14 @@ export function Dashboard() {
                       )}
                     </div>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           </Card>
 
           {/* Trajectoire */}
           <Card>
-            <CardHeader title="Votre trajectoire" hint="Revenus, dépenses et épargne mois après mois" icon="TrendingUp" tone="gold" />
+            <CardHeader title="Votre trajectoire" hint="Revenus, dépenses et épargne mois après mois" icon="TrendingUp" tone="amber" />
             <div className="px-3 pb-4 sm:px-5">
               <TrendChart budgets={budgets} />
             </div>
@@ -186,7 +191,7 @@ export function Dashboard() {
 
           {/* Postes principaux */}
           <Card>
-            <CardHeader title="Vos plus gros postes" hint={`Sur ${monthLabel(month)}`} icon="ShoppingBasket" tone="plum" />
+            <CardHeader title="Vos plus gros postes" hint={`Sur ${monthLabel(month)}`} icon="ShoppingBasket" tone="orchid" />
             <ul className="flex flex-col gap-1 px-5 pb-5">
               {topSpending.map((item) => {
                 const share = summary.totals.income > 0 ? item.amount / summary.totals.income : 0
@@ -201,7 +206,7 @@ export function Dashboard() {
                         <span className="tabular shrink-0 text-[0.88rem] font-semibold text-ink">{euro(item.amount)}</span>
                       </span>
                       <span className="mt-1.5 block">
-                        <Progress value={share} tone="plum" height={5} label={item.label} />
+                        <Progress value={share} tone="orchid" height={5} label={item.label} />
                       </span>
                     </span>
                     <span className="tabular w-10 shrink-0 text-right text-[0.75rem] text-ink-muted">
@@ -224,7 +229,7 @@ export function Dashboard() {
               <p className="mt-1 font-display text-xl text-ink">Niveau {level.level}</p>
               <p className="mt-1.5 max-w-[24ch] text-[0.82rem] leading-snug text-ink-muted">{stage.blurb}</p>
               <div className="mt-4 w-full">
-                <Progress value={level.progress} tone="gold" />
+                <Progress value={level.progress} tone="amber" />
                 <p className="tabular mt-2 text-[0.75rem] text-ink-muted">
                   {level.xpInLevel} / {level.xpForLevel} XP
                   {upcoming && ` · ${upcoming.label} au niveau ${upcoming.fromLevel}`}
@@ -244,9 +249,11 @@ export function Dashboard() {
             <div className="flex flex-col items-center px-5 pb-5">
               <Dial value={health.total / 100} tone={healthTone}>
                 <span>
-                  <span className={clsx('tabular block font-display text-3xl leading-none', TONE[healthTone].text)}>
-                    {health.total}
-                  </span>
+                  <AnimatedNumber
+                    value={health.total}
+                    format={(n) => String(Math.round(n))}
+                    className={clsx('tabular block font-display text-3xl leading-none', TONE[healthTone].text)}
+                  />
                   <span className="mt-1 block text-[0.72rem] font-semibold text-ink-muted">{health.grade}</span>
                 </span>
               </Dial>
@@ -274,9 +281,9 @@ export function Dashboard() {
               title="Défis du jour"
               hint="Cochez ce que vous avez tenu"
               icon="Sun"
-              tone="gold"
+              tone="amber"
               action={
-                <Link to="/quetes" className="text-[0.8rem] font-semibold text-sage-deep hover:underline">
+                <Link to="/quetes" className="text-[0.8rem] font-semibold text-brand-deep hover:underline">
                   Tout voir
                 </Link>
               }
@@ -291,14 +298,14 @@ export function Dashboard() {
           {/* Objectif principal */}
           {mainGoal && projection && (
             <Card>
-              <CardHeader title="Votre objectif" hint={strategy ? `Stratégie ${strategy.name}` : undefined} icon="Target" tone="sage" />
+              <CardHeader title="Votre objectif" hint={strategy ? `Stratégie ${strategy.name}` : undefined} icon="Target" tone="mint" />
               <div className="px-5 pb-5">
                 <p className="font-display text-lg leading-tight text-ink">{mainGoal.label}</p>
                 <p className="tabular mt-2 text-[0.85rem] text-ink-soft">
-                  <span className="font-semibold text-sage-deep">{euro(saved)}</span> sur {euro(mainGoal.targetAmount)}
+                  <span className="font-semibold text-mint-deep">{euro(saved)}</span> sur {euro(mainGoal.targetAmount)}
                 </p>
                 <div className="mt-2">
-                  <Progress value={saved / mainGoal.targetAmount} tone="sage" />
+                  <Progress value={saved / mainGoal.targetAmount} tone="mint" />
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-xl bg-surface-2 p-3">

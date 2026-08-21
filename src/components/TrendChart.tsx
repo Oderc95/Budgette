@@ -29,17 +29,13 @@ export function TrendChart({ budgets }: { budgets: MonthBudget[] }) {
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
           <defs>
-            <linearGradient id="gIncome" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--c-sage)" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="var(--c-sage)" stopOpacity={0.02} />
-            </linearGradient>
             <linearGradient id="gSpend" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--c-clay)" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="var(--c-clay)" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="var(--c-berry)" stopOpacity={0.34} />
+              <stop offset="100%" stopColor="var(--c-berry)" stopOpacity={0.02} />
             </linearGradient>
             <linearGradient id="gSave" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--c-gold)" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="var(--c-gold)" stopOpacity={0.03} />
+              <stop offset="0%" stopColor="var(--c-amber)" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="var(--c-amber)" stopOpacity={0.03} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="var(--c-border)" strokeDasharray="2 6" vertical={false} />
@@ -74,9 +70,19 @@ export function TrendChart({ budgets }: { budgets: MonthBudget[] }) {
             iconSize={8}
             wrapperStyle={{ fontSize: 12, color: 'var(--c-text-soft)', paddingTop: 6 }}
           />
-          <Area type="monotone" dataKey="Revenus" stroke="var(--c-sage)" strokeWidth={2} fill="url(#gIncome)" />
-          <Area type="monotone" dataKey="Dépenses" stroke="var(--c-clay)" strokeWidth={2} fill="url(#gSpend)" />
-          <Area type="monotone" dataKey="Épargne" stroke="var(--c-gold)" strokeWidth={2} fill="url(#gSave)" />
+          {/* Les dépenses et l'épargne sont des surfaces ; les revenus restent une
+              ligne de référence, sinon les trois aplats se recouvrent et se brouillent. */}
+          <Area type="monotone" dataKey="Dépenses" stroke="var(--c-berry)" strokeWidth={2.5} fill="url(#gSpend)" />
+          <Area type="monotone" dataKey="Épargne" stroke="var(--c-amber)" strokeWidth={2.5} fill="url(#gSave)" />
+          <Area
+            type="monotone"
+            dataKey="Revenus"
+            stroke="var(--c-mint)"
+            strokeWidth={2.5}
+            fill="none"
+            strokeDasharray="5 4"
+            activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--c-mint)' }}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>

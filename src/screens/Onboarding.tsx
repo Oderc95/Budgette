@@ -4,7 +4,7 @@ import clsx from 'clsx'
 import { useApp } from '../store/useApp'
 import { GOAL_CATALOG, STRATEGIES, applyRule, emergencyFundTarget } from '../domain/strategy'
 import type { GoalKind } from '../domain/types'
-import { Button, Chip, Progress } from '../components/ui/primitives'
+import { Ambient, Button, Chip, Progress } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { newId } from '../lib/id'
@@ -68,10 +68,12 @@ export function Onboarding() {
   }
 
   return (
-    <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-5 py-8">
+    <>
+      <Ambient />
+      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-5 py-8">
       <header className="mb-8">
         <div className="mb-5 flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-sage-soft text-sage-deep">
+          <span className="grid size-9 place-items-center rounded-xl brand-gradient text-on-accent shadow-soft">
             <Icon name="Sprout" size={19} />
           </span>
           <span className="font-display text-xl font-semibold text-ink">Budgette</span>
@@ -80,8 +82,8 @@ export function Onboarding() {
         <div className="flex items-center gap-2">
           {STEPS.map((label, index) => (
             <div key={label} className="flex flex-1 flex-col gap-1.5">
-              <Progress value={index <= step ? 1 : 0} tone={index <= step ? 'sage' : 'sage'} height={4} animate={false} />
-              <span className={clsx('text-[0.7rem] font-semibold', index <= step ? 'text-sage-deep' : 'text-ink-muted')}>
+              <Progress value={index <= step ? 1 : 0} tone={index <= step ? 'mint' : 'mint'} height={4} animate={false} />
+              <span className={clsx('text-[0.7rem] font-semibold', index <= step ? 'text-brand-deep' : 'text-ink-muted')}>
                 {label}
               </span>
             </div>
@@ -107,7 +109,7 @@ export function Onboarding() {
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="Votre prénom"
-                  className="rounded-xl border border-line bg-surface px-4 py-3 text-center font-display text-lg text-ink outline-none transition focus:border-sage"
+                  className="rounded-xl border border-line bg-surface px-4 py-3 text-center font-display text-lg text-ink outline-none transition focus:border-brand"
                 />
               </label>
             </motion.div>
@@ -131,14 +133,14 @@ export function Onboarding() {
                       className={clsx(
                         'flex items-start gap-3 rounded-2xl border p-4 text-left transition',
                         selected
-                          ? 'border-sage bg-sage-soft shadow-soft'
+                          ? 'border-brand bg-brand-soft shadow-soft'
                           : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2',
                       )}
                     >
                       <span
                         className={clsx(
                           'grid size-10 shrink-0 place-items-center rounded-xl transition',
-                          selected ? 'bg-sage text-[#fffcf7]' : 'bg-surface-2 text-sage-deep',
+                          selected ? 'bg-brand text-on-accent' : 'bg-surface-2 text-ink-soft',
                         )}
                       >
                         <Icon name={goal.icon} size={19} />
@@ -215,7 +217,7 @@ export function Onboarding() {
                 <Mascot stageIndex={2} size={120} />
               </div>
               <p className="text-center">
-                <Chip tone="gold" icon="Sparkles">
+                <Chip tone="amber" icon="Sparkles">
                   Stratégie recommandée
                 </Chip>
               </p>
@@ -227,7 +229,7 @@ export function Onboarding() {
               <div className="mt-7 rounded-2xl border border-line bg-surface p-5">
                 <p className="eyebrow mb-3">Votre effort mensuel</p>
                 <div className="flex items-end justify-between gap-4">
-                  <p className="tabular font-display text-4xl leading-none text-sage-deep">{euro(monthlyEffort)}</p>
+                  <p className="tabular font-display text-4xl leading-none text-mint-deep">{euro(monthlyEffort)}</p>
                   <p className="text-right text-[0.8rem] leading-snug text-ink-muted">
                     par mois pendant {months} mois
                     <br />
@@ -235,7 +237,7 @@ export function Onboarding() {
                   </p>
                 </div>
                 <div className="mt-4">
-                  <Progress value={effortShare} tone={effortShare > 0.35 ? 'clay' : 'sage'} />
+                  <Progress value={effortShare} tone={effortShare > 0.35 ? 'berry' : 'mint'} />
                   <p className="mt-2 text-[0.78rem] leading-snug text-ink-muted">
                     {effortShare > 0.35
                       ? "C'est un effort très soutenu. Allonger le délai de quelques mois le rendra tenable — et un plan tenu vaut mieux qu'un plan parfait abandonné."
@@ -247,9 +249,9 @@ export function Onboarding() {
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {(
                   [
-                    { key: 'needs', label: 'Besoins', value: allocation.needs, pct: strategy.rule.needs, tone: 'sky' as const },
-                    { key: 'wants', label: 'Envies', value: allocation.wants, pct: strategy.rule.wants, tone: 'plum' as const },
-                    { key: 'future', label: 'Avenir', value: allocation.future, pct: strategy.rule.future, tone: 'gold' as const },
+                    { key: 'needs', label: 'Besoins', value: allocation.needs, pct: strategy.rule.needs, tone: 'indigo' as const },
+                    { key: 'wants', label: 'Envies', value: allocation.wants, pct: strategy.rule.wants, tone: 'orchid' as const },
+                    { key: 'future', label: 'Avenir', value: allocation.future, pct: strategy.rule.future, tone: 'amber' as const },
                   ]
                 ).map((slice) => (
                   <div key={slice.key} className={clsx('rounded-2xl border p-4', TONE[slice.tone].bg, TONE[slice.tone].border)}>
@@ -266,7 +268,7 @@ export function Onboarding() {
                 <p className="eyebrow mb-1">Vos trois priorités</p>
                 {strategy.priorities.map((priority) => (
                   <li key={priority} className="flex items-start gap-2 text-[0.85rem] leading-snug text-ink-soft">
-                    <Icon name="Check" size={15} className="mt-0.5 shrink-0 text-sage" />
+                    <Icon name="Check" size={15} className="mt-0.5 shrink-0 text-mint" />
                     {priority}
                   </li>
                 ))}
@@ -290,7 +292,8 @@ export function Onboarding() {
           </Button>
         )}
       </footer>
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -324,7 +327,7 @@ function Field({
     <div>
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <span className="text-[0.85rem] font-semibold text-ink">{label}</span>
-        <span className="tabular font-display text-xl text-sage-deep">
+        <span className="tabular font-display text-xl text-brand-deep">
           {value.toLocaleString('fr-FR')} {suffix}
         </span>
       </div>
@@ -335,7 +338,7 @@ function Field({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full accent-[var(--c-sage)]"
+        className="w-full"
         aria-label={label}
       />
       {hint && <p className="mt-1.5 text-[0.78rem] leading-snug text-ink-muted">{hint}</p>}

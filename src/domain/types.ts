@@ -11,7 +11,7 @@
 export type Flow = 'income' | 'fixed' | 'debt' | 'saving' | 'discretionary'
 
 /** Teinte sémantique associée à un flux ou une catégorie. */
-export type Tone = 'sage' | 'sky' | 'clay' | 'gold' | 'plum'
+export type Tone = 'brand' | 'mint' | 'indigo' | 'berry' | 'amber' | 'orchid'
 
 export interface Category {
   id: string

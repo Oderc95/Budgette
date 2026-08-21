@@ -1,108 +1,172 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&family=Caveat:wght@500;600;700&display=swap');
 @import 'tailwindcss';
 
 /* ---------------------------------------------------------------------------
-   Budgette — jetons de design « botanique cosy »
-   Palette dérivée de l'infographie « Idées d'objectifs financiers » :
-   crème, sauge, olive profond, or. Chaque jeton est défini en clair sur :root,
-   puis redéfini pour le thème sombre (préférence système ET choix explicite).
+   Budgette — palette « Verger au couchant »
+   Fond chaud (crème abricotée en clair, aubergine profond en sombre) et six
+   accents saturés répartis sur la roue chromatique, tous calés sur une
+   luminosité et une saturation voisines pour qu'ils cohabitent sans se battre.
+
+   Toute couleur est définie en clair sur :root, puis redéfinie pour la
+   préférence système ET pour un choix explicite de thème. Aucune couleur n'est
+   déclarée uniquement dans un bloc conditionnel : c'est ce qui provoque les
+   pages illisibles quand l'hôte n'applique aucun attribut de thème.
 --------------------------------------------------------------------------- */
 :root {
   color-scheme: light;
 
-  --c-bg: #f8f1e7;
-  --c-bg-deep: #f0e5d6;
-  --c-surface: #fffcf7;
-  --c-surface-2: #f7f0e6;
-  --c-surface-3: #efe5d6;
-  --c-border: #e5d9c7;
-  --c-border-strong: #d6c6ad;
+  --c-bg: #fff6ee;
+  --c-bg-deep: #fbe7d8;
+  --c-surface: #ffffff;
+  --c-surface-2: #fff4ea;
+  --c-surface-3: #fbe5d4;
+  --c-border: #f4ddca;
+  --c-border-strong: #e7c6ab;
 
-  --c-text: #3e4739;
-  --c-text-soft: #6b7462;
-  --c-text-muted: #8f9680;
+  --c-text: #33232c;
+  --c-text-soft: #6b5461;
+  --c-text-muted: #9a8390;
+  --c-on-accent: #fffaf5;
 
-  --c-sage: #7e9166;
-  --c-sage-deep: #5c6f47;
-  --c-sage-soft: #dde5d1;
-  --c-gold: #b8901f;
-  --c-gold-soft: #f4e6bd;
-  --c-clay: #c06a52;
-  --c-clay-soft: #f4ddd4;
-  --c-sky: #5f8598;
-  --c-sky-soft: #d9e6ec;
-  --c-plum: #8a6693;
-  --c-plum-soft: #e9dcec;
+  --c-brand: #db5620;
+  --c-brand-deep: #b34110;
+  --c-brand-soft: #fde0d0;
 
-  --c-shadow: 62 71 57;
-  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.05), 0 8px 24px -12px rgb(var(--c-shadow) / 0.16);
-  --shadow-lift: 0 2px 4px rgb(var(--c-shadow) / 0.06), 0 18px 40px -18px rgb(var(--c-shadow) / 0.28);
+  --c-mint: #0f9068;
+  --c-mint-deep: #0a6f50;
+  --c-mint-soft: #d5f0e2;
+
+  --c-indigo: #4d5fc2;
+  --c-indigo-deep: #3a4aa3;
+  --c-indigo-soft: #e0e4fc;
+
+  --c-berry: #d0344f;
+  --c-berry-deep: #ab2340;
+  --c-berry-soft: #fbdbe1;
+
+  --c-amber: #b37605;
+  --c-amber-deep: #915d00;
+  --c-amber-soft: #fce9c8;
+
+  --c-orchid: #a244b9;
+  --c-orchid-deep: #85319a;
+  --c-orchid-soft: #f4dcfa;
+
+  --c-shadow: 82 44 28;
+  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.06), 0 10px 26px -14px rgb(var(--c-shadow) / 0.22);
+  --shadow-lift: 0 2px 6px rgb(var(--c-shadow) / 0.08), 0 22px 44px -18px rgb(var(--c-shadow) / 0.34);
+  --shadow-glow: 0 0 0 1px rgb(var(--c-shadow) / 0.04), 0 14px 40px -16px rgb(var(--c-shadow) / 0.4);
+
+  --blob-a: #ffb37a;
+  --blob-b: #ffd08a;
+  --blob-c: #f7a6c0;
+  --blob-opacity: 0.32;
 }
 
+/* Thème sombre : préférence système, sauf choix explicite de thème clair. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
 
-    --c-bg: #171a12;
-    --c-bg-deep: #12140d;
-    --c-surface: #21251b;
-    --c-surface-2: #272c20;
-    --c-surface-3: #2f3527;
-    --c-border: #363c2c;
-    --c-border-strong: #4a5239;
+    --c-bg: #1a1119;
+    --c-bg-deep: #130b12;
+    --c-surface: #241825;
+    --c-surface-2: #2c1e2d;
+    --c-surface-3: #382637;
+    --c-border: #3d293c;
+    --c-border-strong: #573c56;
 
-    --c-text: #e9e6da;
-    --c-text-soft: #b3b6a2;
-    --c-text-muted: #878b76;
+    --c-text: #f8ecf2;
+    --c-text-soft: #cbb4c2;
+    --c-text-muted: #9c8593;
+    --c-on-accent: #1a1119;
 
-    --c-sage: #9cb583;
-    --c-sage-deep: #b6cc9f;
-    --c-sage-soft: #2e3a25;
-    --c-gold: #dcbc64;
-    --c-gold-soft: #3d3520;
-    --c-clay: #dd917a;
-    --c-clay-soft: #40281f;
-    --c-sky: #8bb3c6;
-    --c-sky-soft: #223037;
-    --c-plum: #b795bf;
-    --c-plum-soft: #322639;
+    --c-brand: #ff8f5e;
+    --c-brand-deep: #ffab84;
+    --c-brand-soft: #47241a;
+
+    --c-mint: #4cd9a4;
+    --c-mint-deep: #7ce9bd;
+    --c-mint-soft: #103a2b;
+
+    --c-indigo: #9ba8ff;
+    --c-indigo-deep: #bcc4ff;
+    --c-indigo-soft: #242a53;
+
+    --c-berry: #ff8095;
+    --c-berry-deep: #ffa3b2;
+    --c-berry-soft: #45212c;
+
+    --c-amber: #f5c462;
+    --c-amber-deep: #ffd98c;
+    --c-amber-soft: #3f2f16;
+
+    --c-orchid: #e09af0;
+    --c-orchid-deep: #edbcf8;
+    --c-orchid-soft: #3b2143;
 
     --c-shadow: 0 0 0;
-    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
-    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -18px rgb(0 0 0 / 0.75);
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.35), 0 10px 26px -14px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.4), 0 22px 44px -18px rgb(0 0 0 / 0.85);
+    --shadow-glow: 0 0 0 1px rgb(255 255 255 / 0.05), 0 14px 40px -16px rgb(0 0 0 / 0.9);
+
+    --blob-a: #ff7a3c;
+    --blob-b: #c9508f;
+    --blob-c: #4d5fc2;
+    --blob-opacity: 0.34;
   }
 }
 
+/* Thème sombre choisi explicitement : doit gagner sur un système clair. */
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --c-bg: #171a12;
-  --c-bg-deep: #12140d;
-  --c-surface: #21251b;
-  --c-surface-2: #272c20;
-  --c-surface-3: #2f3527;
-  --c-border: #363c2c;
-  --c-border-strong: #4a5239;
+  --c-bg: #1a1119;
+  --c-bg-deep: #130b12;
+  --c-surface: #241825;
+  --c-surface-2: #2c1e2d;
+  --c-surface-3: #382637;
+  --c-border: #3d293c;
+  --c-border-strong: #573c56;
 
-  --c-text: #e9e6da;
-  --c-text-soft: #b3b6a2;
-  --c-text-muted: #878b76;
+  --c-text: #f8ecf2;
+  --c-text-soft: #cbb4c2;
+  --c-text-muted: #9c8593;
+  --c-on-accent: #1a1119;
 
-  --c-sage: #9cb583;
-  --c-sage-deep: #b6cc9f;
-  --c-sage-soft: #2e3a25;
-  --c-gold: #dcbc64;
-  --c-gold-soft: #3d3520;
-  --c-clay: #dd917a;
-  --c-clay-soft: #40281f;
-  --c-sky: #8bb3c6;
-  --c-sky-soft: #223037;
-  --c-plum: #b795bf;
-  --c-plum-soft: #322639;
+  --c-brand: #ff8f5e;
+  --c-brand-deep: #ffab84;
+  --c-brand-soft: #47241a;
+
+  --c-mint: #4cd9a4;
+  --c-mint-deep: #7ce9bd;
+  --c-mint-soft: #103a2b;
+
+  --c-indigo: #9ba8ff;
+  --c-indigo-deep: #bcc4ff;
+  --c-indigo-soft: #242a53;
+
+  --c-berry: #ff8095;
+  --c-berry-deep: #ffa3b2;
+  --c-berry-soft: #45212c;
+
+  --c-amber: #f5c462;
+  --c-amber-deep: #ffd98c;
+  --c-amber-soft: #3f2f16;
+
+  --c-orchid: #e09af0;
+  --c-orchid-deep: #edbcf8;
+  --c-orchid-soft: #3b2143;
 
   --c-shadow: 0 0 0;
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
-  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -18px rgb(0 0 0 / 0.75);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.35), 0 10px 26px -14px rgb(0 0 0 / 0.7);
+  --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.4), 0 22px 44px -18px rgb(0 0 0 / 0.85);
+  --shadow-glow: 0 0 0 1px rgb(255 255 255 / 0.05), 0 14px 40px -16px rgb(0 0 0 / 0.9);
+
+  --blob-a: #ff7a3c;
+  --blob-b: #c9508f;
+  --blob-c: #4d5fc2;
+  --blob-opacity: 0.34;
 }
 
 @theme inline {
@@ -117,25 +181,39 @@
   --color-ink: var(--c-text);
   --color-ink-soft: var(--c-text-soft);
   --color-ink-muted: var(--c-text-muted);
+  --color-on-accent: var(--c-on-accent);
 
-  --color-sage: var(--c-sage);
-  --color-sage-deep: var(--c-sage-deep);
-  --color-sage-soft: var(--c-sage-soft);
-  --color-gold: var(--c-gold);
-  --color-gold-soft: var(--c-gold-soft);
-  --color-clay: var(--c-clay);
-  --color-clay-soft: var(--c-clay-soft);
-  --color-sky: var(--c-sky);
-  --color-sky-soft: var(--c-sky-soft);
-  --color-plum: var(--c-plum);
-  --color-plum-soft: var(--c-plum-soft);
+  --color-brand: var(--c-brand);
+  --color-brand-deep: var(--c-brand-deep);
+  --color-brand-soft: var(--c-brand-soft);
+
+  --color-mint: var(--c-mint);
+  --color-mint-deep: var(--c-mint-deep);
+  --color-mint-soft: var(--c-mint-soft);
+
+  --color-indigo: var(--c-indigo);
+  --color-indigo-deep: var(--c-indigo-deep);
+  --color-indigo-soft: var(--c-indigo-soft);
+
+  --color-berry: var(--c-berry);
+  --color-berry-deep: var(--c-berry-deep);
+  --color-berry-soft: var(--c-berry-soft);
+
+  --color-amber: var(--c-amber);
+  --color-amber-deep: var(--c-amber-deep);
+  --color-amber-soft: var(--c-amber-soft);
+
+  --color-orchid: var(--c-orchid);
+  --color-orchid-deep: var(--c-orchid-deep);
+  --color-orchid-soft: var(--c-orchid-soft);
 
   --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-hand: 'Caveat', 'Segoe Script', cursive;
 
   --shadow-soft: var(--shadow-soft);
   --shadow-lift: var(--shadow-lift);
+  --shadow-glow: var(--shadow-glow);
 
   --radius-xl2: 1.5rem;
 }
@@ -143,53 +221,56 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    background-color: var(--c-bg);
   }
 
   body {
     background-color: var(--c-bg);
     color: var(--c-text);
     font-family: var(--font-sans);
-    font-feature-settings: 'ss01', 'cv01';
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    margin: 0;
   }
 
-  /* Motif végétal discret, hérité de l'infographie. */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-      radial-gradient(closest-side, rgb(126 145 102 / 0.10), transparent),
-      radial-gradient(closest-side, rgb(184 144 31 / 0.08), transparent);
-    background-size: 46rem 46rem, 34rem 34rem;
-    background-position: -12rem -14rem, 108% 8%;
-    background-repeat: no-repeat;
+  /*
+    Le fond est peint sur le conteneur de l'application, et pas seulement sur
+    `body` : certains hôtes injectent leur propre réinitialisation CSS après
+    la feuille de style de la page et écrasent le fond du document. La page
+    afficherait alors le texte d'un thème sur le fond de l'autre.
+  */
+  #root {
+    position: relative;
+    min-height: 100dvh;
+    background-color: var(--c-bg);
+    isolation: isolate;
   }
 
   h1, h2, h3 {
     font-family: var(--font-display);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
   }
 
   ::selection {
-    background: var(--c-sage-soft);
+    background: var(--c-brand-soft);
     color: var(--c-text);
   }
 
   :focus-visible {
-    outline: 2px solid var(--c-sage);
+    outline: 2px solid var(--c-brand);
     outline-offset: 2px;
-    border-radius: 0.5rem;
+    border-radius: 0.6rem;
   }
 
-  /* Barres de défilement discrètes, accordées au thème. */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--c-border-strong) transparent;
+  }
+
+  input[type='range'] {
+    accent-color: var(--c-brand);
   }
 }
 
@@ -199,6 +280,13 @@
     border: 1px solid var(--c-border);
     border-radius: var(--radius-xl2);
     box-shadow: var(--shadow-soft);
+    transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-lift);
+    border-color: var(--c-border-strong);
+    transform: translateY(-2px);
   }
 
   .chip {
@@ -213,9 +301,9 @@
   }
 
   .eyebrow {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--c-text-muted);
   }
@@ -223,6 +311,121 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Aplat dégradé de la couleur de marque, pour les actions principales. */
+  .brand-gradient {
+    background-image: linear-gradient(135deg, var(--c-brand) 0%, var(--c-berry) 100%);
+  }
+
+  /* Reflet qui balaie un élément au survol. */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.28) 50%, transparent 80%);
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .sheen:hover::after {
+    transform: translateX(120%);
+  }
+}
+
+@layer utilities {
+  /* Halos colorés en fond de page, animés très lentement. */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: var(--blob-opacity);
+  }
+
+  .ambient span {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    will-change: transform;
+  }
+
+  .ambient span:nth-child(1) {
+    width: 34rem;
+    height: 34rem;
+    top: -12rem;
+    left: -10rem;
+    background: var(--blob-a);
+    animation: drift 34s ease-in-out infinite;
+  }
+
+  .ambient span:nth-child(2) {
+    width: 26rem;
+    height: 26rem;
+    top: 20%;
+    right: -8rem;
+    background: var(--blob-b);
+    animation: drift 44s ease-in-out infinite reverse;
+  }
+
+  .ambient span:nth-child(3) {
+    width: 30rem;
+    height: 30rem;
+    bottom: -14rem;
+    left: 35%;
+    background: var(--blob-c);
+    animation: drift 52s ease-in-out infinite;
+  }
+
+  .shimmer {
+    background-image: linear-gradient(100deg, transparent 25%, rgb(255 255 255 / 0.45) 50%, transparent 75%);
+    background-size: 250% 100%;
+    animation: shimmer 2.6s linear infinite;
+  }
+
+  .animate-float {
+    animation: float 5s ease-in-out infinite;
+  }
+
+  .animate-pop {
+    animation: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .animate-glow {
+    animation: glow 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(4rem, 3rem, 0) scale(1.12); }
+  66% { transform: translate3d(-3rem, 2rem, 0) scale(0.94); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 150% 0; }
+  100% { background-position: -50% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.18); }
 }
 
 /* Respect de la préférence « réduire les animations ». */
@@ -233,5 +436,9 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .ambient span {
+    animation: none !important;
   }
 }
