@@ -6,6 +6,7 @@ import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Toaster } from './Toaster'
 import { Tour } from './Tour'
+import { GoalPrompt } from './GoalPrompt'
 import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../domain/gamification'
 import { Ambient, Progress } from './ui/primitives'
 import { Logo } from './Logo'
@@ -314,6 +315,7 @@ export function Layout() {
       </div>
 
       <Tour />
+      <GoalPrompt />
       <Toaster />
       </div>
     </>

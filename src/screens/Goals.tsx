@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
@@ -7,14 +8,26 @@ import { GOAL_CATALOG, STRATEGIES, emergencyFundTarget } from '../domain/strateg
 import { Button, Card, CardHeader, EmptyState, Progress } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
+import { FriendsPanel } from '../components/social/FriendsPanel'
+import { GroupsPanel } from '../components/social/GroupsPanel'
 import { newId } from '../lib/id'
 import { addMonths, euro, monthKey, monthLabel, monthsBetween } from '../lib/format'
 import type { GoalKind } from '../domain/types'
+
+type GoalsTab = 'perso' | 'groupes' | 'amis'
+
+const TABS: { id: GoalsTab; label: string; icon: string }[] = [
+  { id: 'perso', label: 'Mes objectifs', icon: 'Target' },
+  { id: 'groupes', label: 'Groupes', icon: 'Users' },
+  { id: 'amis', label: 'Amis', icon: 'UserPlus' },
+]
 
 export function Goals() {
   const goals = useApp((s) => s.goals)
   const pockets = useApp((s) => s.pockets)
   const budgets = useApp((s) => s.budgets)
+  const groups = useApp((s) => s.groups)
+  const friends = useApp((s) => s.friends)
   const addGoal = useApp((s) => s.addGoal)
   const removeGoal = useApp((s) => s.removeGoal)
   const pushToast = useApp((s) => s.pushToast)
@@ -23,7 +36,24 @@ export function Goals() {
   const month = budgets.some((b) => b.month === live) ? live : (budgets[budgets.length - 1]?.month ?? live)
   const summary = summarize(budgets.find((b) => b.month === month), month)
 
-  const [creating, setCreating] = useState(false)
+  // `/objectifs?nouveau=1` ouvre directement la création : c'est le chemin
+  // que prend la proposition d'objectif à la fin de la visite guidée. Lu à
+  // l'initialisation — l'écran est remonté à chaque navigation — puis l'URL
+  // est nettoyée pour que le dialogue ne se rouvre pas au rechargement.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const arriveePourCreer = new URLSearchParams(location.search).has('nouveau')
+  const [tab, setTab] = useState<GoalsTab>('perso')
+  const [creating, setCreating] = useState(arriveePourCreer)
+  useEffect(() => {
+    if (arriveePourCreer) navigate('/objectifs', { replace: true })
+  }, [arriveePourCreer, navigate])
+
+  const compteur: Record<GoalsTab, number> = {
+    perso: goals.length,
+    groupes: groups.length,
+    amis: friends.filter((f) => f.status !== 'demande_envoyee').length,
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -32,13 +62,43 @@ export function Goals() {
           <p className="eyebrow">Objectifs</p>
           <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Où vous voulez arriver</h1>
           <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-ink-soft">
-            Chiffré et daté, un objectif aboutit. Chacun a sa poche d’épargne.
+            Seul ou à plusieurs : chiffré et daté, un objectif aboutit.
           </p>
         </div>
-        <Button icon="Plus" onClick={() => setCreating(true)}>
-          Nouvel objectif
-        </Button>
+        {tab === 'perso' && (
+          <Button icon="Plus" onClick={() => setCreating(true)}>
+            Nouvel objectif
+          </Button>
+        )}
       </header>
+
+      {/* Seul · à plusieurs · le réseau */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setTab(item.id)}
+            aria-pressed={tab === item.id}
+            className={clsx(
+              'chip shrink-0 border px-3.5 py-2 text-[0.82rem] transition',
+              tab === item.id
+                ? 'border-brand bg-brand-soft text-brand-deep'
+                : 'border-line bg-surface text-ink-soft hover:border-line-strong hover:text-ink',
+            )}
+          >
+            <Icon name={item.icon} size={14} />
+            {item.label}
+            <span className="tabular rounded-full bg-surface px-1.5 text-[0.68rem] text-ink-muted">{compteur[item.id]}</span>
+          </button>
+        ))}
+      </div>
+
+      {tab === 'groupes' && <GroupsPanel />}
+      {tab === 'amis' && <FriendsPanel />}
+
+      {tab === 'perso' && (
+      <>
 
       {/* Objectifs */}
       {goals.length === 0 ? (
@@ -174,6 +234,8 @@ export function Goals() {
       </Card>
 
       <Simulators fixedMonthly={totalsByFlow(budgets.find((b) => b.month === month)).fixed} />
+      </>
+      )}
 
       <AnimatePresence>
         {creating && (

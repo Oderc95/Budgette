@@ -12,9 +12,9 @@ stratégie, et une progression sans fin transforme la discipline budgétaire en 
 | Écran | Rôle |
 | --- | --- |
 | **Accueil** | Reste à vivre, reste en fin de mois, répartition du revenu, score de santé budgétaire, analyses commentées, trajectoire sur les mois saisis |
-| **Mon mois** | Saisie manuelle par catégorie, reprise en un clic du mois précédent, clôture avec ressenti |
+| **Mon mois** | Saisie par catégorie, étiquettes libres, dépenses ponctuelles, comparaison au mois de référence, clôture avec ressenti |
 | **Quêtes** | Défis quotidiens, hebdomadaires, mensuels et annuels ; multiplicateur de série |
-| **Objectifs** | Objectifs chiffrés et datés, poches d'épargne, simulateurs de fonds d'urgence et de projection |
+| **Objectifs** | Objectifs chiffrés et datés, poches d'épargne, simulateurs — et la dimension sociale : groupes autour d'un objectif commun avec un administrateur, amis cherchés par pseudo unique |
 | **Jardin** | Niveaux, douze paliers de croissance, badges, saisons trimestrielles |
 | **Profil** | Thème, stratégie, droits RGPD, périmètre de traitement |
 | **Admin** | Indicateurs agrégés, comptes, activation de fonctionnalités, journal d'audit, registre des traitements |

@@ -67,7 +67,13 @@ for (const theme of ['light', 'dark']) {
     await page.waitForTimeout(350)
   }
   await page.getByRole('button', { name: 'C’est parti !' }).click()
-  await page.waitForTimeout(500)
+
+  // La visite enchaîne sur la proposition d'objectif : on la capture puis on
+  // la remet à plus tard pour continuer le parcours.
+  await page.waitForSelector('text=Et maintenant, ton objectif', { timeout: 15000 })
+  await shoot(page, `13-objectif-${theme}`, 1440, 900)
+  await page.getByRole('button', { name: 'Plus tard' }).click()
+  await page.waitForTimeout(400)
 
   await shoot(page, `02-accueil-${theme}`, 1440, 1800)
 

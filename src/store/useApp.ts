@@ -362,10 +362,16 @@ export const useApp = create<AppState>()(
       acceptFriend: (friendId) =>
         set((state) => ({
           friends: state.friends.map((f) => (f.id === friendId ? { ...f, status: 'ami' } : f)),
+          // Se rattacher à quelqu'un sans objectif propre : on propose d'en
+          // définir un, comme à la fin de la visite guidée.
+          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
         })),
 
       createGroup: (group) => {
-        set((state) => ({ groups: [...state.groups, group] }))
+        set((state) => ({
+          groups: [...state.groups, group],
+          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
+        }))
         get().pushToast({ title: 'Groupe créé !', detail: group.name, tone: 'indigo', icon: 'Users' })
       },
 
