@@ -1,6 +1,8 @@
-import { useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { motion } from 'framer-motion'
 import clsx from 'clsx'
+import { createTimeline, eases } from 'animejs'
+import { motionOK } from '../lib/wow'
 
 /*
  * La pousse est toujours crème, dans les deux thèmes. Elle était auparavant
@@ -24,15 +26,49 @@ const CREME = '#fffaf5'
  * changements de largeur — et des identifiants dupliqués feraient pointer
  * toutes les instances vers la première définition rencontrée.
  */
-export function LogoMark({ size = 44, className }: { size?: number; className?: string }) {
+export function LogoMark({
+  size = 44,
+  className,
+  draw = false,
+}: {
+  size?: number
+  className?: string
+  /** La pousse se dessine : la tige se trace, puis chaque feuille éclot. */
+  draw?: boolean
+}) {
   // Les identifiants produits par React contiennent des caractères que les
   // références `url(#…)` ne digèrent pas partout : on ne garde que l'alphabet.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '')
   const fill = `marque-fond-${uid}`
   const shine = `marque-reflet-${uid}`
+  const svgRef = useRef<SVGSVGElement>(null)
+
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!draw || !svg || !motionOK()) return
+
+    const tige = svg.querySelector<SVGPathElement>('[data-part="tige"]')
+    const feuilles = svg.querySelectorAll<SVGPathElement>('[data-part="feuille"]')
+    if (!tige) return
+
+    // `pathLength=1` normalise le tracé : le trait se dessine en animant le
+    // décalage du pointillé de 1 vers 0, sans mesurer la géométrie réelle.
+    const timeline = createTimeline()
+    timeline
+      .add(tige, { strokeDashoffset: [1, 0], duration: 650, ease: 'outQuart' }, 250)
+      .add(
+        feuilles,
+        { scale: [0, 1], opacity: [0, 1], duration: 700, ease: eases.outElastic(1.1, 0.55) },
+        '-=250',
+      )
+    return () => {
+      timeline.cancel()
+    }
+  }, [draw])
 
   return (
     <svg
+      ref={svgRef}
       width={size}
       height={size}
       viewBox="0 0 48 48"
@@ -55,20 +91,29 @@ export function LogoMark({ size = 44, className }: { size?: number; className?: 
       <rect width="48" height="48" rx="13" fill={`url(#${shine})`} />
 
       <path
+        data-part="tige"
         d="M24 38 C 23.4 30, 23.7 23, 24 16.5"
         fill="none"
         stroke={CREME}
         strokeWidth="3.1"
         strokeLinecap="round"
+        pathLength={1}
+        strokeDasharray={draw ? 1 : undefined}
+        strokeDashoffset={draw ? 1 : undefined}
       />
       <path
+        data-part="feuille"
         d="M22.9 26 C 16.2 26.2, 11.7 22.2, 11.5 15.5 C 18.2 15.7, 22.6 19.4, 22.9 26 Z"
         fill={CREME}
+        opacity={draw ? 0 : undefined}
+        style={draw ? { transformBox: 'fill-box', transformOrigin: '100% 100%' } : undefined}
       />
       <path
+        data-part="feuille"
         d="M25.1 20.6 C 31.8 20.8, 36.3 16.6, 36.5 10 C 29.8 10.2, 25.4 14, 25.1 20.6 Z"
         fill={CREME}
-        opacity="0.86"
+        opacity={draw ? 0 : 0.86}
+        style={draw ? { transformBox: 'fill-box', transformOrigin: '0% 100%' } : undefined}
       />
     </svg>
   )
@@ -93,11 +138,13 @@ export function Logo({
   size = 'md',
   layout = 'row',
   tagline = true,
+  draw = false,
   className,
 }: {
   size?: keyof typeof TAILLES
   layout?: 'row' | 'column'
   tagline?: boolean
+  draw?: boolean
   className?: string
 }) {
   const t = TAILLES[size]
@@ -117,7 +164,7 @@ export function Logo({
         whileHover={{ rotate: -8, scale: 1.06 }}
         transition={{ type: 'spring', stiffness: 400, damping: 14 }}
       >
-        <LogoMark size={t.mark} className="block" />
+        <LogoMark size={t.mark} className="block" draw={draw} />
       </motion.span>
       <span className={clsx('min-w-0 leading-none', colonne && 'flex flex-col items-center')}>
         <span

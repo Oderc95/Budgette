@@ -18,6 +18,7 @@ import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { Mascot } from '../components/Mascot'
 import { LivingMascot } from '../components/LivingMascot'
+import { useCascade } from '../lib/useCascade'
 import { dateLabel, monthKey } from '../lib/format'
 
 export function Garden() {
@@ -36,6 +37,7 @@ export function Garden() {
   // Le chemin s'ouvre centré sur le palier atteint : les premiers paliers
   // sont de l'histoire ancienne, c'est la suite qui intéresse.
   const cheminRef = useRef<HTMLDivElement>(null)
+  const badgesRef = useCascade<HTMLDivElement>(':scope > *', [], { step: 30 })
   useEffect(() => {
     const conteneur = cheminRef.current
     const actuel = conteneur?.querySelector<HTMLElement>('[data-palier-actuel]')
@@ -138,7 +140,7 @@ export function Garden() {
           icon="Trophy"
           tone="amber"
         />
-        <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div ref={badgesRef} className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
           {BADGES.map((badge) => {
             const at = unlockedMap.get(badge.id)
             const isUnlocked = Boolean(at)

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCascade } from '../lib/useCascade'
 import clsx from 'clsx'
 import { MOCK_ADMIN_USERS, MOCK_AUDIT_LOG, MOCK_FEATURE_FLAGS } from '../data/mock'
 import { BADGES, CHALLENGES } from '../domain/challenges'
@@ -19,6 +20,8 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 export function Admin() {
   const [tab, setTab] = useState<Tab>('overview')
+  // Les indicateurs de la vue d'ensemble tombent en cascade à l'arrivée.
+  const statsRef = useCascade<HTMLDivElement>(':scope > *', [tab], { step: 40 })
   const [flags, setFlags] = useState(MOCK_FEATURE_FLAGS)
   const [query, setQuery] = useState('')
 
@@ -64,7 +67,7 @@ export function Admin() {
 
       {tab === 'overview' && (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div ref={statsRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Comptes" value={String(MOCK_ADMIN_USERS.length)} icon="Users" tone="mint" emphasis />
             <Stat label="Actifs 30 j" value={String(activeUsers)} icon="Flame" tone="berry" hint="Au moins une saisie" />
             <Stat label="Rétention 3 mois" value={`${retention} %`} icon="TrendingUp" tone="amber" />

@@ -11,6 +11,7 @@ import { Confetti } from '../components/Confetti'
 import { MonthDonut } from '../components/MonthDonut'
 import { ReferenceCard } from '../components/ReferenceCard'
 import { TagPicker } from '../components/TagPicker'
+import { burst } from '../lib/wow'
 import { addMonths, euro, euroSigned, monthKey, monthLabel } from '../lib/format'
 import type { Flow } from '../domain/types'
 
@@ -474,7 +475,10 @@ export function MonthEntry() {
                   <button
                     key={mood.value}
                     type="button"
-                    onClick={() => handleClose(mood.value)}
+                    onClick={(event) => {
+                      burst(event.currentTarget, ['mint', 'amber', 'orchid'], 18)
+                      handleClose(mood.value)
+                    }}
                     className="flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface p-2.5 transition hover:border-brand hover:bg-brand-soft"
                   >
                     <Icon name={mood.icon} size={18} className="text-ink-soft" />

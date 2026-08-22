@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCascade } from '../lib/useCascade'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
 import { CHALLENGES } from '../domain/challenges'
@@ -16,6 +17,8 @@ export function Quests() {
   const profile = useApp((s) => s.profile)
   const progress = useApp((s) => s.challengeProgress)
   const [cadence, setCadence] = useState<ChallengeCadence>('daily')
+  // Les cartes de défis tombent en cascade à chaque changement de cadence.
+  const listeRef = useCascade<HTMLDivElement>('.group', [cadence])
 
   const season = seasonForMonth(monthKey(new Date()))
   const level = levelFromXp(profile.xp)
@@ -108,7 +111,7 @@ export function Quests() {
           icon={CADENCE_META[cadence].icon}
           tone="amber"
         />
-        <div className="grid gap-3 px-5 pb-5 lg:grid-cols-2">
+        <div ref={listeRef} className="grid gap-3 px-5 pb-5 lg:grid-cols-2">
           {list.map((challenge) => (
             <ChallengeCard key={challenge.id} challenge={challenge} featured={featured.has(challenge.id)} />
           ))}

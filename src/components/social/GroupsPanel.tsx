@@ -8,6 +8,7 @@ import { Button, Card, Progress } from '../ui/primitives'
 import { TONE } from '../ui/tone'
 import { Icon } from '../Icon'
 import { newId } from '../../lib/id'
+import { burst } from '../../lib/wow'
 import { addMonths, euro, monthKey, monthLabel } from '../../lib/format'
 
 /** Total versé au pot commun d'un groupe, tous membres confondus. */
@@ -178,6 +179,7 @@ function GroupCard({
                   onSubmit={(event) => {
                     event.preventDefault()
                     if (amount <= 0) return
+                    burst(event.currentTarget, [group.tone === 'brand' ? 'indigo' : group.tone, 'amber'])
                     contributeToGroup(group.id, month, amount)
                     pushToast({ title: `+${euro(amount)} au pot`, detail: group.name, tone: group.tone === 'brand' ? 'indigo' : group.tone, icon: 'PiggyBank' })
                   }}

@@ -11,6 +11,7 @@ import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../do
 import { Ambient, Progress } from './ui/primitives'
 import { Logo } from './Logo'
 import { Mascot } from './Mascot'
+import { useCascade } from '../lib/useCascade'
 import { monthKey } from '../lib/format'
 
 /**
@@ -138,6 +139,8 @@ export function Layout() {
 
   const nav = role === 'admin' ? [...NAV, { to: '/admin', label: 'Admin', icon: 'Shield' }] : NAV
 
+  const navRef = useCascade<HTMLElement>(':scope > a', [], { fromY: 10, step: 40 })
+
   // Ajustement d'état pendant le rendu : à chaque changement d'écran, la
   // direction est dérivée de l'écran quitté, avant que la transition ne parte.
   const routeIndex = ROUTE_ORDER.indexOf(location.pathname)
@@ -165,7 +168,7 @@ export function Layout() {
       <aside className="pad-safe-x sticky top-0 hidden h-dvh w-[19.5rem] shrink-0 flex-col gap-5 border-r border-line bg-bg/80 px-6 py-6 backdrop-blur-xl lg:flex">
         <Logo size="md" />
 
-        <nav className="flex flex-col gap-1">
+        <nav ref={navRef} className="flex flex-col gap-1">
           {nav.map((item) => (
             <NavLink
               key={item.to}

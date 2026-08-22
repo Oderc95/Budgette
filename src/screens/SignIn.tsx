@@ -128,7 +128,7 @@ export function SignIn() {
         <motion.div className="w-full max-w-sm" variants={scene} initial="hidden" animate="visible">
           {/* La marque accueille : centrée, le nom sous le symbole. */}
           <motion.div variants={piece}>
-            <Logo size="xl" layout="column" className="mb-9" />
+            <Logo size="xl" layout="column" className="mb-9" draw />
           </motion.div>
 
           <motion.div variants={piece} className="text-center">

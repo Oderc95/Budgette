@@ -6,6 +6,7 @@ import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Mascot } from './Mascot'
 import { TONE } from './ui/tone'
+import { burst } from '../lib/wow'
 import { Button } from './ui/primitives'
 
 /**
@@ -114,7 +115,14 @@ export function Tour() {
             <Button
               icon={derniere ? 'Sparkles' : undefined}
               iconRight={derniere ? undefined : 'ArrowRight'}
-              onClick={() => (derniere ? terminer() : setEtape((e) => e + 1))}
+              onClick={(event) => {
+                if (derniere) {
+                  burst(event.currentTarget as HTMLElement, ['mint', 'amber', 'orchid'], 20)
+                  terminer()
+                } else {
+                  setEtape((e) => e + 1)
+                }
+              }}
             >
               {derniere ? 'C’est parti !' : 'Suivant'}
             </Button>
