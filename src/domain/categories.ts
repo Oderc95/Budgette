@@ -6,7 +6,7 @@ export const FLOW_META: Record<Flow, { label: string; short: string; tone: Tone;
   fixed: { label: 'Charges contraintes', short: 'Charges', tone: 'indigo', icon: 'House' },
   debt: { label: 'Dettes', short: 'Dettes', tone: 'berry', icon: 'Scale' },
   saving: { label: 'Épargne', short: 'Épargne', tone: 'amber', icon: 'PiggyBank' },
-  discretionary: { label: 'Dépenses plaisir', short: 'Plaisir', tone: 'orchid', icon: 'IceCreamCone' },
+  discretionary: { label: 'Dépenses non essentielles', short: 'Non essentiel', tone: 'orchid', icon: 'IceCreamCone' },
 }
 
 export const FLOW_ORDER: Flow[] = ['income', 'fixed', 'debt', 'saving', 'discretionary']

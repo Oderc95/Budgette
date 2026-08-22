@@ -3,12 +3,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
 import { CATEGORIES, CATEGORY_BY_ID, FLOW_META, FLOW_ORDER, categoriesOf } from '../domain/categories'
-import { summarize, totalsByFlow } from '../domain/budget'
+import { pocketBalance, pocketCategoryId, summarize, totalsByFlow } from '../domain/budget'
 import { Button, Card, Chip } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { Confetti } from '../components/Confetti'
 import { MonthDonut } from '../components/MonthDonut'
+import { ReferenceCard } from '../components/ReferenceCard'
+import { TagPicker } from '../components/TagPicker'
 import { addMonths, euro, euroSigned, monthKey, monthLabel } from '../lib/format'
 import type { Flow } from '../domain/types'
 
@@ -27,6 +29,11 @@ export function MonthEntry() {
   const closeMonth = useApp((s) => s.closeMonth)
   const reopenMonth = useApp((s) => s.reopenMonth)
   const pushToast = useApp((s) => s.pushToast)
+  const setLineDetails = useApp((s) => s.setLineDetails)
+  const retired = useApp((s) => s.retired)
+  const tags = useApp((s) => s.tags)
+  const goals = useApp((s) => s.goals)
+  const pockets = useApp((s) => s.pockets)
 
   const live = monthKey(new Date())
   const fallback = budgets.some((b) => b.month === live) ? live : (budgets[budgets.length - 1]?.month ?? live)
@@ -34,6 +41,8 @@ export function MonthEntry() {
   const [openFlow, setOpenFlow] = useState<Flow | null>('income')
   const [closing, setClosing] = useState(false)
   const [celebrate, setCelebrate] = useState(false)
+  /** Ligne dont le volet étiquettes / ponctuel est ouvert. */
+  const [detailFor, setDetailFor] = useState<string | null>(null)
 
   const budget = budgets.find((b) => b.month === month)
   const summary = summarize(budget, month)
@@ -42,6 +51,16 @@ export function MonthEntry() {
 
   const amountOf = (categoryId: string) =>
     budget?.lines.find((line) => line.categoryId === categoryId)?.amount ?? 0
+  const lineOf = (categoryId: string) => budget?.lines.find((line) => line.categoryId === categoryId)
+
+  /** Objectif alimenté par une catégorie d'épargne, s'il existe. */
+  const goalFor = (categoryId: string) => {
+    const pocket = pockets.find((p) => pocketCategoryId(p.id) === categoryId)
+    if (!pocket) return null
+    const goal = goals.find((g) => g.pocketId === pocket.id)
+    if (!goal) return null
+    return { goal, balance: pocketBalance(pocket, budgets) }
+  }
 
   const filledCount = budget?.lines.length ?? 0
 
@@ -52,8 +71,12 @@ export function MonthEntry() {
     for (const line of previous.lines) {
       const category = CATEGORY_BY_ID[line.categoryId]
       if (!category) continue
-      // On ne reconduit que ce qui est stable d'un mois sur l'autre.
+      // On ne reconduit que ce qui est stable d'un mois sur l'autre : ni les
+      // envies, ni les dépenses marquées ponctuelles, ni les charges que
+      // l'utilisateur a déclarées « plus d'actualité ».
       if (category.flow === 'discretionary') continue
+      if (line.oneOff) continue
+      if (retired[line.categoryId]) continue
       if (amountOf(line.categoryId) > 0) continue
       setLine(month, line.categoryId, line.amount)
       copied += 1
@@ -170,6 +193,8 @@ export function MonthEntry() {
         </Card>
       </div>
 
+      <ReferenceCard month={month} />
+
       {/* Sections de saisie */}
       <div className="flex flex-col gap-3">
         {FLOW_ORDER.map((flow) => {
@@ -212,8 +237,13 @@ export function MonthEntry() {
                   >
                     <div className="border-t border-line px-5 py-4">
                       <ul className="flex flex-col gap-1">
-                        {visible.map((category) => (
-                          <li key={category.id} className="flex items-center gap-3 py-1.5">
+                        {visible.map((category) => {
+                          const line = lineOf(category.id)
+                          const linked = category.flow === 'saving' ? goalFor(category.id) : null
+                          const detailOpen = detailFor === category.id
+                          return (
+                          <li key={category.id} className="py-1.5">
+                          <div className="flex items-center gap-3">
                             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-ink-soft">
                               <Icon name={category.icon} size={15} />
                             </span>
@@ -221,8 +251,33 @@ export function MonthEntry() {
                               <label htmlFor={`in-${category.id}`} className="block truncate text-[0.88rem] font-medium text-ink">
                                 {category.label}
                               </label>
-                              {category.hint && (
-                                <span className="block truncate text-[0.72rem] text-ink-muted">{category.hint}</span>
+                              {linked ? (
+                                <span className="tabular block truncate text-[0.72rem] text-amber-deep">
+                                  → « {linked.goal.label} » · {euro(linked.balance)} / {euro(linked.goal.targetAmount)}
+                                </span>
+                              ) : (
+                                category.hint && (
+                                  <span className="block truncate text-[0.72rem] text-ink-muted">{category.hint}</span>
+                                )
+                              )}
+                              {((line?.tagIds?.length ?? 0) > 0 || line?.oneOff) && (
+                                <span className="mt-0.5 flex flex-wrap items-center gap-1">
+                                  {line?.oneOff && (
+                                    <span className="chip bg-surface-3 px-1.5 py-0 text-[0.62rem] text-ink-soft">
+                                      <Icon name="Zap" size={9} />
+                                      ponctuel
+                                    </span>
+                                  )}
+                                  {line?.tagIds?.map((tagId) => {
+                                    const tag = tags.find((t) => t.id === tagId)
+                                    if (!tag) return null
+                                    return (
+                                      <span key={tagId} className={clsx('chip px-1.5 py-0 text-[0.62rem]', TONE[tag.tone].bg, TONE[tag.tone].deep)}>
+                                        {tag.label}
+                                      </span>
+                                    )
+                                  })}
+                                </span>
                               )}
                             </span>
                             <span className="relative shrink-0">
@@ -247,8 +302,57 @@ export function MonthEntry() {
                                 €
                               </span>
                             </span>
+                            {line && (
+                              <button
+                                type="button"
+                                onClick={() => setDetailFor(detailOpen ? null : category.id)}
+                                aria-expanded={detailOpen}
+                                aria-label={`Étiquettes de ${category.label}`}
+                                className={clsx(
+                                  'grid size-8 shrink-0 place-items-center rounded-lg border transition',
+                                  detailOpen || (line.tagIds?.length ?? 0) > 0 || line.oneOff
+                                    ? 'border-brand/40 bg-brand-soft text-brand-deep'
+                                    : 'border-line text-ink-muted hover:text-ink',
+                                )}
+                              >
+                                <Icon name="Tag" size={14} />
+                              </button>
+                            )}
+                          </div>
+
+                          {line && detailOpen && (
+                            <div className="ml-11 mt-2 flex flex-col gap-2 rounded-xl border border-line bg-surface-2 p-3">
+                              <TagPicker
+                                selected={line.tagIds ?? []}
+                                disabled={locked}
+                                onToggle={(tagId) => {
+                                  const current = line.tagIds ?? []
+                                  setLineDetails(month, category.id, {
+                                    tagIds: current.includes(tagId)
+                                      ? current.filter((id) => id !== tagId)
+                                      : [...current, tagId],
+                                  })
+                                }}
+                              />
+                              {category.flow !== 'income' && (
+                                <label className="flex cursor-pointer items-center gap-2 text-[0.78rem] text-ink-soft">
+                                  <input
+                                    type="checkbox"
+                                    disabled={locked}
+                                    checked={line.oneOff ?? false}
+                                    onChange={(event) =>
+                                      setLineDetails(month, category.id, { oneOff: event.target.checked })
+                                    }
+                                    className="size-4 accent-[var(--c-brand)]"
+                                  />
+                                  Dépense ponctuelle — ne sera pas attendue le mois prochain
+                                </label>
+                              )}
+                            </div>
+                          )}
                           </li>
-                        ))}
+                          )
+                        })}
                       </ul>
 
                       {hidden.length > 0 && !locked && (
@@ -281,6 +385,39 @@ export function MonthEntry() {
           )
         })}
       </div>
+
+      {/* Ce que racontent les étiquettes du mois */}
+      {(() => {
+        const parTag = tags
+          .map((tag) => ({
+            tag,
+            total: (budget?.lines ?? [])
+              .filter((line) => line.tagIds?.includes(tag.id))
+              .reduce((sum, line) => sum + line.amount, 0),
+          }))
+          .filter((entry) => entry.total > 0)
+          .sort((a, b) => b.total - a.total)
+        if (parTag.length === 0) return null
+        return (
+          <Card>
+            <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-orchid-soft text-orchid-deep">
+                <Icon name="Tag" size={17} />
+              </span>
+              <span className="text-[0.9rem] font-semibold text-ink">Vos étiquettes ce mois-ci</span>
+              <span className="ml-auto flex flex-wrap gap-1.5">
+                {parTag.map(({ tag, total }) => (
+                  <span key={tag.id} className={clsx('chip', TONE[tag.tone].bg, TONE[tag.tone].deep)}>
+                    <span className={clsx('size-1.5 rounded-full', TONE[tag.tone].solid)} />
+                    {tag.label}
+                    <span className="tabular font-bold">{euro(total)}</span>
+                  </span>
+                ))}
+              </span>
+            </div>
+          </Card>
+        )
+      })()}
 
       <p className="px-1 text-[0.78rem] leading-relaxed text-ink-muted">
         {CATEGORIES.length} catégories disponibles. Les charges marquées comme récurrentes restent affichées d’un mois

@@ -71,22 +71,12 @@ verifier(
   `mois clôturés dans le rouge : ${moisRouges.join(', ')} — la trajectoire devient illisible`,
 )
 
-// --- Poches d'épargne contre lignes mensuelles -------------------------------
-// La convention `pocket_x` ↔ `sav_x` est ce qui permet de rapprocher les deux.
+// --- Poches d'épargne -------------------------------------------------------
+// Le solde dérive des lignes de saisie : il reste à vérifier que chaque poche
+// a bien sa catégorie au catalogue (convention `pocket_x` ↔ `sav_x`).
 for (const pocket of MOCK_POCKETS) {
   const categoryId = pocket.id.replace(/^pocket_/, 'sav_')
   verifier(CATEGORY_BY_ID[categoryId], `${pocket.id} : pas de catégorie « ${categoryId} »`)
-
-  for (const budget of MOCK_BUDGETS) {
-    const saisi = budget.lines
-      .filter((l) => l.categoryId === categoryId)
-      .reduce((sum, l) => sum + l.amount, 0)
-    const verse = pocket.contributions[budget.month] ?? 0
-    verifier(
-      saisi === verse,
-      `${pocket.id} / ${budget.month} : ${verse} € versés dans la poche mais ${saisi} € saisis sur ${categoryId}`,
-    )
-  }
 }
 
 // Aucune ligne d'épargne ne doit viser une poche qui n'existe pas.
@@ -107,11 +97,8 @@ for (const goal of MOCK_GOALS) {
   verifier(pocket, `${goal.id} : poche « ${goal.pocketId} » introuvable`)
   if (!pocket) continue
 
-  const solde = pocketBalance(pocket)
-  verifier(
-    goal.savedAmount === solde,
-    `${goal.id} : ${goal.savedAmount} € annoncés contre ${solde} € au solde de la poche`,
-  )
+  const solde = pocketBalance(pocket, MOCK_BUDGETS)
+  verifier(solde > 0, `${goal.id} : la poche « ${pocket.id} » n'a reçu aucun versement`)
   verifier(
     goal.targetAmount === pocket.target,
     `${goal.id} : cible ${goal.targetAmount} € contre ${pocket.target} € sur la poche`,
@@ -141,6 +128,41 @@ for (const badge of MOCK_UNLOCKED) {
 }
 for (const suivi of MOCK_CHALLENGE_PROGRESS) {
   verifier(CHALLENGE_BY_ID[suivi.challengeId], `défi inconnu « ${suivi.challengeId} »`)
+}
+
+// --- Étiquettes et social ----------------------------------------------------
+const { MOCK_TAGS, MOCK_FRIENDS, MOCK_DIRECTORY, MOCK_GROUPS } = mock
+const tagsConnus = new Set(MOCK_TAGS.map((t) => t.id))
+for (const budget of MOCK_BUDGETS) {
+  for (const line of budget.lines) {
+    for (const tagId of line.tagIds ?? []) {
+      verifier(tagsConnus.has(tagId), `${budget.month} / ${line.categoryId} : étiquette inconnue « ${tagId} »`)
+    }
+  }
+}
+
+const pseudos = [
+  MOCK_PROFILE.pseudo,
+  ...MOCK_FRIENDS.map((f) => f.pseudo),
+  ...MOCK_DIRECTORY.map((f) => f.pseudo),
+]
+verifier(new Set(pseudos).size === pseudos.length, 'social : des pseudos ne sont pas uniques')
+
+for (const groupe of MOCK_GROUPS) {
+  verifier(
+    groupe.members.filter((m) => m.role === 'admin').length === 1,
+    `${groupe.id} : il faut exactement un administrateur`,
+  )
+  verifier(
+    groupe.members.some((m) => m.id === MOCK_PROFILE.id),
+    `${groupe.id} : le profil de démonstration doit être membre`,
+  )
+  const verse = groupe.members.reduce(
+    (sum, m) => sum + Object.values(m.contributions).reduce((s, v) => s + v, 0),
+    0,
+  )
+  verifier(verse <= groupe.targetAmount, `${groupe.id} : ${verse} € versés pour ${groupe.targetAmount} € visés`)
+  dire.push(`groupe    ${groupe.name} : ${verse} € / ${groupe.targetAmount} €, ${groupe.members.length} membres`)
 }
 
 // --- Console d'administration ------------------------------------------------

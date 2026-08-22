@@ -2,22 +2,29 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type {
   ChallengeProgress,
+  Friend,
   Goal,
+  Group,
   MonthBudget,
   MonthKey,
   Profile,
   SavingsPocket,
+  Tag,
   UnlockedBadge,
 } from '../domain/types'
 import {
   MOCK_BUDGETS,
   MOCK_CHALLENGE_PROGRESS,
+  MOCK_FRIENDS,
   MOCK_GOALS,
+  MOCK_GROUPS,
   MOCK_POCKETS,
   MOCK_PROFILE,
+  MOCK_TAGS,
   MOCK_UNLOCKED,
 } from '../data/mock'
 import { CHALLENGE_BY_ID } from '../domain/challenges'
+import { pocketCategoryId } from '../domain/budget'
 import { dayKey, monthKey, weekKey } from '../lib/format'
 import { streakMultiplier } from '../domain/gamification'
 
@@ -61,6 +68,19 @@ interface AppState {
   activeMonth: MonthKey
   /** Visite guidée : montrée une seule fois, à la première arrivée. */
   tourDone: boolean
+  /** Après la visite : proposer de définir son objectif, une seule fois. */
+  goalPromptPending: boolean
+  /** Étiquettes libres, collées sur des lignes de saisie. */
+  tags: Tag[]
+  /**
+   * Mois de comparaison de la saisie : ce qui y figure est « attendu » le mois
+   * suivant, sauf lignes ponctuelles et catégories retirées depuis.
+   */
+  referenceMonth: MonthKey | null
+  /** Catégories déclarées « plus d'actualité », et depuis quel mois. */
+  retired: Record<string, MonthKey>
+  friends: Friend[]
+  groups: Group[]
 
   signIn: () => void
   signOut: () => void
@@ -77,6 +97,26 @@ interface AppState {
   removeGoal: (goalId: string) => void
   contributeToPocket: (pocketId: string, month: MonthKey, amount: number) => void
   addPocket: (pocket: SavingsPocket) => void
+  addTag: (tag: Tag) => void
+  setLineDetails: (
+    month: MonthKey,
+    categoryId: string,
+    details: { tagIds?: string[]; oneOff?: boolean },
+  ) => void
+  setReferenceMonth: (month: MonthKey | null) => void
+  retireCategory: (categoryId: string, month: MonthKey) => void
+  restoreCategory: (categoryId: string) => void
+  requestFriend: (friend: Friend) => void
+  acceptFriend: (friendId: string) => void
+  createGroup: (group: Group) => void
+  updateGroupGoal: (
+    groupId: string,
+    patch: Partial<Pick<Group, 'name' | 'goalKind' | 'goalLabel' | 'targetAmount' | 'deadline' | 'icon' | 'tone'>>,
+  ) => void
+  removeGroupMember: (groupId: string, memberId: string) => void
+  leaveGroup: (groupId: string) => void
+  contributeToGroup: (groupId: string, month: MonthKey, amount: number) => void
+  dismissGoalPrompt: () => void
   grantXp: (amount: number, reason: string) => void
   pushToast: (toast: Omit<Toast, 'id'>) => void
   dismissToast: (id: number) => void
@@ -97,6 +137,13 @@ const initial = () => ({
   toasts: [] as Toast[],
   activeMonth: latestMonth(MOCK_BUDGETS),
   tourDone: false,
+  goalPromptPending: false,
+  tags: MOCK_TAGS,
+  // Le dernier mois clôturé du jeu de démonstration sert de référence.
+  referenceMonth: '2026-07' as MonthKey | null,
+  retired: {} as Record<string, MonthKey>,
+  friends: MOCK_FRIENDS,
+  groups: MOCK_GROUPS,
 })
 
 function latestMonth(budgets: MonthBudget[]): MonthKey {
@@ -174,8 +221,11 @@ export const useApp = create<AppState>()(
           return {
             budgets: budgets.map((budget) => {
               if (budget.month !== month || budget.closed) return budget
+              // Le montant change, mais les étiquettes, la note et le
+              // caractère ponctuel de la ligne survivent à la modification.
+              const existing = budget.lines.find((l) => l.categoryId === categoryId)
               const lines = budget.lines.filter((l) => l.categoryId !== categoryId)
-              if (amount > 0) lines.push({ categoryId, amount })
+              if (amount > 0) lines.push({ ...existing, categoryId, amount })
               return { ...budget, lines }
             }),
           }
@@ -188,6 +238,9 @@ export const useApp = create<AppState>()(
           budgets: state.budgets.map((b) =>
             b.month === month ? { ...b, closed: true, closedAt: new Date().toISOString(), mood, note } : b,
           ),
+          // Le mois qu'on vient de clôturer devient la nouvelle référence :
+          // c'est lui qui dira ce qui est attendu le mois prochain.
+          referenceMonth: month,
         }))
         get().grantXp(CHALLENGE_BY_ID.m_close.xp, 'Mois clôturé')
       },
@@ -244,17 +297,14 @@ export const useApp = create<AppState>()(
 
       addPocket: (pocket) => set((state) => ({ pockets: [...state.pockets, pocket] })),
 
-      contributeToPocket: (pocketId, month, amount) =>
-        set((state) => ({
-          pockets: state.pockets.map((pocket) =>
-            pocket.id === pocketId
-              ? {
-                  ...pocket,
-                  contributions: { ...pocket.contributions, [month]: (pocket.contributions[month] ?? 0) + amount },
-                }
-              : pocket,
-          ),
-        })),
+      // Verser dans une poche, c'est écrire la ligne d'épargne du mois :
+      // l'écran Objectifs et l'écran de saisie regardent le même chiffre.
+      contributeToPocket: (pocketId, month, amount) => {
+        const categoryId = pocketCategoryId(pocketId)
+        const budget = get().budgets.find((b) => b.month === month)
+        const current = budget?.lines.find((l) => l.categoryId === categoryId)?.amount ?? 0
+        get().setLine(month, categoryId, current + amount)
+      },
 
       grantXp: (amount, reason) => {
         set((state) => ({ profile: { ...state.profile, xp: state.profile.xp + amount } }))
@@ -276,7 +326,95 @@ export const useApp = create<AppState>()(
 
       dismissToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 
-      completeTour: () => set({ tourDone: true }),
+      addTag: (tag) => set((state) => ({ tags: [...state.tags, tag] })),
+
+      setLineDetails: (month, categoryId, details) =>
+        set((state) => ({
+          budgets: state.budgets.map((budget) => {
+            if (budget.month !== month) return budget
+            return {
+              ...budget,
+              lines: budget.lines.map((line) =>
+                line.categoryId === categoryId ? { ...line, ...details } : line,
+              ),
+            }
+          }),
+        })),
+
+      setReferenceMonth: (month) => set({ referenceMonth: month }),
+
+      retireCategory: (categoryId, month) =>
+        set((state) => ({ retired: { ...state.retired, [categoryId]: month } })),
+
+      restoreCategory: (categoryId) =>
+        set((state) => {
+          const { [categoryId]: _removed, ...rest } = state.retired
+          return { retired: rest }
+        }),
+
+      requestFriend: (friend) =>
+        set((state) =>
+          state.friends.some((f) => f.id === friend.id)
+            ? state
+            : { friends: [...state.friends, { ...friend, status: 'demande_envoyee' }] },
+        ),
+
+      acceptFriend: (friendId) =>
+        set((state) => ({
+          friends: state.friends.map((f) => (f.id === friendId ? { ...f, status: 'ami' } : f)),
+          // Se rattacher à quelqu'un sans objectif propre : on propose d'en
+          // définir un, comme à la fin de la visite guidée.
+          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
+        })),
+
+      createGroup: (group) => {
+        set((state) => ({
+          groups: [...state.groups, group],
+          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
+        }))
+        get().pushToast({ title: 'Groupe créé !', detail: group.name, tone: 'indigo', icon: 'Users' })
+      },
+
+      updateGroupGoal: (groupId, patch) =>
+        set((state) => ({
+          groups: state.groups.map((g) => (g.id === groupId ? { ...g, ...patch } : g)),
+        })),
+
+      removeGroupMember: (groupId, memberId) =>
+        set((state) => ({
+          groups: state.groups.map((g) =>
+            g.id === groupId ? { ...g, members: g.members.filter((m) => m.id !== memberId) } : g,
+          ),
+        })),
+
+      leaveGroup: (groupId) =>
+        set((state) => ({ groups: state.groups.filter((g) => g.id !== groupId) })),
+
+      contributeToGroup: (groupId, month, amount) =>
+        set((state) => ({
+          groups: state.groups.map((group) => {
+            if (group.id !== groupId) return group
+            return {
+              ...group,
+              members: group.members.map((member) =>
+                member.id === state.profile.id
+                  ? {
+                      ...member,
+                      contributions: {
+                        ...member.contributions,
+                        [month]: (member.contributions[month] ?? 0) + amount,
+                      },
+                    }
+                  : member,
+              ),
+            }
+          }),
+        })),
+
+      dismissGoalPrompt: () => set({ goalPromptPending: false }),
+
+      // La fin de la visite enchaîne sur la définition de l'objectif.
+      completeTour: () => set({ tourDone: true, goalPromptPending: true }),
 
       resetDemo: () => set({ ...initial(), authenticated: true }),
     }),
@@ -288,10 +426,10 @@ export const useApp = create<AppState>()(
       /*
        * Un état persisté d'une version antérieure est jeté, pas raccommodé :
        * ce sont des données de démonstration, et les garder ferait cohabiter
-       * l'ancien profil avec le nouveau jeu — c'est exactement ce qui laissait
-       * « Credo » à l'écran après le remplacement du profil par Camille.
+       * l'ancien profil avec le nouveau jeu. La v3 introduit les étiquettes, les
+       * groupes et le mois de référence.
        */
-      version: 2,
+      version: 3,
       migrate: () => ({ ...initial() }),
     },
   ),

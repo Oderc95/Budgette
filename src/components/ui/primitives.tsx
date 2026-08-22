@@ -19,8 +19,10 @@ export function Ambient() {
 /**
  * Carte de contenu.
  *
- * Elle se révèle à l'entrée dans le champ de vision : c'est ce qui donne à
- * l'ensemble des écrans leur rythme, sans avoir à animer chaque écran à la main.
+ * Elle apparaît une fois, à l'arrivée sur l'écran — un simple fondu qui se
+ * pose. Une version précédente se révélait à l'entrée dans le champ de
+ * vision : chaque défilement faisait surgir et glisser des blocs, et la page
+ * semblait se réagencer en permanence.
  */
 export function Card({
   children,
@@ -36,10 +38,9 @@ export function Card({
   return (
     <motion.section
       className={clsx('card relative overflow-hidden', hover && 'card-hover', className)}
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay, ease: 'easeOut' }}
     >
       {children}
     </motion.section>
