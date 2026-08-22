@@ -7,7 +7,7 @@ import {
   Luggage, Menu, Moon, Monitor, Mountain, PackageOpen, Palmtree, PenLine, PiggyBank, Plane, Plus,
   RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
   Snowflake, Sparkles, Split, Sprout, Sun, Target, Telescope, Terminal, Ticket, TramFront, TrendingDown,
-  TrendingUp, Trophy, Umbrella, Undo2, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
+  Search, Tag, TrendingUp, Trophy, Umbrella, Undo2, UserPlus, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
@@ -26,7 +26,7 @@ const REGISTRY: Record<string, ComponentType<{ size?: number; strokeWidth?: numb
   Luggage, Menu, Moon, Monitor, Mountain, PackageOpen, Palmtree, PenLine, PiggyBank, Plane, Plus,
   RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
   Snowflake, Sparkles, Split, Sprout, Sun, Target, Telescope, Terminal, Ticket, TramFront, TrendingDown,
-  TrendingUp, Trophy, Umbrella, Undo2, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
+  Search, Tag, TrendingUp, Trophy, Umbrella, Undo2, UserPlus, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
 }
 
 export function Icon({

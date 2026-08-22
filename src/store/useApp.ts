@@ -238,6 +238,9 @@ export const useApp = create<AppState>()(
           budgets: state.budgets.map((b) =>
             b.month === month ? { ...b, closed: true, closedAt: new Date().toISOString(), mood, note } : b,
           ),
+          // Le mois qu'on vient de clôturer devient la nouvelle référence :
+          // c'est lui qui dira ce qui est attendu le mois prochain.
+          referenceMonth: month,
         }))
         get().grantXp(CHALLENGE_BY_ID.m_close.xp, 'Mois clôturé')
       },
