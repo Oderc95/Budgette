@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import clsx from 'clsx'
+import { useCascade } from '../../lib/useCascade'
 import { useApp } from '../../store/useApp'
 import { MOCK_DIRECTORY } from '../../data/mock'
 import { Card, CardHeader } from '../ui/primitives'
@@ -19,6 +19,7 @@ export function FriendsPanel() {
   const acceptFriend = useApp((s) => s.acceptFriend)
   const pushToast = useApp((s) => s.pushToast)
   const [query, setQuery] = useState('')
+  const grilleRef = useCascade<HTMLDivElement>(':scope > *', [], { step: 50 })
 
   const knownIds = new Set(friends.map((f) => f.id))
   const cleaned = query.trim().toLowerCase()
@@ -131,7 +132,7 @@ export function FriendsPanel() {
           icon="Users"
           tone="mint"
         />
-        <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div ref={grilleRef} className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
           {confirmed.map((person) => (
             <div key={person.id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-3">
               <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface">
@@ -145,7 +146,7 @@ export function FriendsPanel() {
             </div>
           ))}
           {pending.map((person) => (
-            <div key={person.id} className={clsx('flex items-center gap-3 rounded-2xl border border-dashed border-line p-3 opacity-70')}>
+            <div key={person.id} className="flex items-center gap-3 rounded-2xl border border-dashed border-line p-3">
               <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface">
                 <Mascot stageIndex={person.stageIndex} size={42} animate={false} />
               </span>

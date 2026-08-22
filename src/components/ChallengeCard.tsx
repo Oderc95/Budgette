@@ -3,6 +3,7 @@ import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import type { Challenge } from '../domain/types'
 import { useApp, useChallengeState } from '../store/useApp'
+import { burst } from '../lib/wow'
 import { Confetti } from './Confetti'
 import { Icon } from './Icon'
 import { TONE } from './ui/tone'
@@ -33,8 +34,11 @@ export function ChallengeCard({
   return (
     <motion.button
       type="button"
-      onClick={() => {
-        if (!done) setFete((f) => f + 1)
+      onClick={(event) => {
+        if (!done) {
+          setFete((f) => f + 1)
+          burst(event.currentTarget, [challenge.tone, 'amber', 'mint'])
+        }
         toggle(challenge.id)
       }}
       whileHover={{ y: -2 }}

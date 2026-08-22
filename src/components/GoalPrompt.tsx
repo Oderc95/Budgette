@@ -4,6 +4,7 @@ import { useApp } from '../store/useApp'
 import { Button } from './ui/primitives'
 import { Icon } from './Icon'
 import { Mascot } from './Mascot'
+import { burst } from '../lib/wow'
 
 /**
  * La proposition d'objectif.
@@ -58,7 +59,8 @@ export function GoalPrompt() {
           </button>
           <Button
             icon="Target"
-            onClick={() => {
+            onClick={(event) => {
+              burst(event.currentTarget as HTMLElement, ['brand', 'amber', 'mint'])
               dismiss()
               navigate('/objectifs?nouveau=1')
             }}

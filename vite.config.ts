@@ -27,6 +27,7 @@ export default defineConfig({
             manualChunks: (id: string) => {
               if (id.includes('/node_modules/recharts/')) return 'charts'
               if (id.includes('/node_modules/framer-motion/')) return 'motion'
+              if (id.includes('/node_modules/animejs/')) return 'motion'
             },
           },
         },

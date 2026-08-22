@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { useApp } from '../store/useApp'
 import { AnimatedNumber, Button, Card, CardHeader, Chip, Dial, Progress, Stat } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
+import { CountUp } from '../components/CountUp'
 import { Icon } from '../components/Icon'
 import { Mascot } from '../components/Mascot'
 import { FlowBar } from '../components/FlowBar'
@@ -63,9 +64,19 @@ export function Dashboard() {
             {greeting}, {profile.displayName}.
           </h1>
           <p className="mt-1 text-[0.9rem] text-ink-soft">
-            {summary.endOfMonth >= 0
-              ? `Il vous reste ${euro(summary.endOfMonth)} de marge ce mois-ci.`
-              : `Le mois est à ${euro(summary.endOfMonth)}. On regarde ensemble d'où ça vient.`}
+            {summary.endOfMonth >= 0 ? (
+              <>
+                Il vous reste{' '}
+                <CountUp value={summary.endOfMonth} format={euro} className="tabular inline-block font-semibold text-mint-deep" />{' '}
+                de marge ce mois-ci.
+              </>
+            ) : (
+              <>
+                Le mois est à{' '}
+                <CountUp value={summary.endOfMonth} format={euro} className="tabular inline-block font-semibold text-berry-deep" />
+                . On regarde ensemble d'où ça vient.
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">

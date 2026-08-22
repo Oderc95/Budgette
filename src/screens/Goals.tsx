@@ -9,6 +9,7 @@ import { Button, Card, CardHeader, EmptyState, Progress } from '../components/ui
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { FriendsPanel } from '../components/social/FriendsPanel'
+import { useCascade } from '../lib/useCascade'
 import { GroupsPanel } from '../components/social/GroupsPanel'
 import { newId } from '../lib/id'
 import { addMonths, euro, monthKey, monthLabel, monthsBetween } from '../lib/format'
@@ -45,6 +46,7 @@ export function Goals() {
   const arriveePourCreer = new URLSearchParams(location.search).has('nouveau')
   const [tab, setTab] = useState<GoalsTab>('perso')
   const [creating, setCreating] = useState(arriveePourCreer)
+  const pochesRef = useCascade<HTMLDivElement>(':scope > *', [tab], { step: 40 })
   useEffect(() => {
     if (arriveePourCreer) navigate('/objectifs', { replace: true })
   }, [arriveePourCreer, navigate])
@@ -202,7 +204,7 @@ export function Goals() {
           icon="PiggyBank"
           tone="amber"
         />
-        <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div ref={pochesRef} className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4">
           {pockets.map((pocket) => {
             const balance = pocketBalance(pocket, budgets)
             const ratio = pocket.target ? Math.min(1, balance / pocket.target) : 0
