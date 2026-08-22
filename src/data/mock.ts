@@ -2,6 +2,7 @@ import type {
   Friend,
   Goal,
   Group,
+  PlannedItem,
   MonthBudget,
   Profile,
   SavingsPocket,
@@ -152,6 +153,8 @@ const MONTHS: { month: string; closed: boolean; mood: 1 | 2 | 3 | 4 | 5; rows: R
     closed: false,
     mood: 4,
     rows: {
+      // 55 € restaient fin juillet : ils se reportent en tête des revenus.
+      inc_carryover: 55,
       inc_salary: 2560,
       fix_housing: 745, fix_energy: 49, fix_water: 18, fix_internet: 31, fix_phone: 19,
       fix_transport: 39, fix_insurance_home: 14, fix_insurance_health: 42,
@@ -310,6 +313,17 @@ export const MOCK_CHALLENGE_PROGRESS = [
   { challengeId: 'y_save_15', period: '2026', value: 8.3, completed: false },
   { challengeId: 'y_debt_free', period: '2026', value: 1, completed: true, completedAt: '2026-07-31T20:00:00.000Z' },
   { challengeId: 'y_goal', period: '2026', value: 0, completed: false },
+]
+
+/**
+ * Le calendrier de Camille : ce qu'elle sait déjà devoir payer ou verser.
+ * Ces éléments préremplissent les mois à venir.
+ */
+export const MOCK_PLANNED: PlannedItem[] = [
+  { id: 'plan_1', label: 'Loyer', categoryId: 'fix_housing', amount: 745, day: 2, recurrence: 'monthly' },
+  { id: 'plan_2', label: 'Versement fonds d’urgence', categoryId: 'sav_emergency', amount: 200, day: 3, recurrence: 'monthly' },
+  { id: 'plan_3', label: 'Anniversaire de maman', categoryId: 'dis_gifts', amount: 45, day: 12, recurrence: 'once', month: '2026-10' },
+  { id: 'plan_4', label: 'Assurance habitation (échéance annuelle)', categoryId: 'fix_insurance_home', amount: 168, day: 5, recurrence: 'once', month: '2026-11' },
 ]
 
 /* ------------------------------- Social -------------------------------- */

@@ -55,7 +55,7 @@ for (const theme of ['light', 'dark']) {
   await shoot(page, `01-connexion-${theme}`, 1440, 900)
 
   await page.getByRole('button', { name: 'Se connecter' }).click()
-  await page.waitForSelector('text=Où part votre argent', { timeout: 15000 })
+  await page.waitForSelector('text=Où part mon argent', { timeout: 15000 })
 
   // La visite guidée accueille la première connexion : on la capture, on la
   // parcourt en entier (chaque étape doit s'afficher sans erreur), puis elle
@@ -79,6 +79,7 @@ for (const theme of ['light', 'dark']) {
 
   const routes = [
     ['mois', '03-mon-mois'],
+    ['annee', '14-mon-annee'],
     ['quetes', '04-quetes'],
     ['objectifs', '05-objectifs'],
     ['jardin', '06-jardin'],

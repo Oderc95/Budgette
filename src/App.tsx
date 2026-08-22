@@ -5,6 +5,7 @@ import { SignIn } from './screens/SignIn'
 import { Onboarding } from './screens/Onboarding'
 import { Dashboard } from './screens/Dashboard'
 import { MonthEntry } from './screens/MonthEntry'
+import { Year } from './screens/Year'
 import { Quests } from './screens/Quests'
 import { Goals } from './screens/Goals'
 import { Garden } from './screens/Garden'
@@ -24,6 +25,7 @@ export function App() {
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="mois" element={<MonthEntry />} />
+        <Route path="annee" element={<Year />} />
         <Route path="quetes" element={<Quests />} />
         <Route path="objectifs" element={<Goals />} />
         <Route path="jardin" element={<Garden />} />

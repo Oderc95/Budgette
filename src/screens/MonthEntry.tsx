@@ -13,6 +13,7 @@ import { ReferenceCard } from '../components/ReferenceCard'
 import { TagPicker } from '../components/TagPicker'
 import { burst } from '../lib/wow'
 import { addMonths, euro, euroSigned, monthKey, monthLabel } from '../lib/format'
+import { lineKey } from '../domain/types'
 import type { Flow } from '../domain/types'
 
 const MOODS: { value: 1 | 2 | 3 | 4 | 5; label: string; icon: string }[] = [
@@ -31,6 +32,9 @@ export function MonthEntry() {
   const reopenMonth = useApp((s) => s.reopenMonth)
   const pushToast = useApp((s) => s.pushToast)
   const setLineDetails = useApp((s) => s.setLineDetails)
+  const addExtraLine = useApp((s) => s.addExtraLine)
+  const removeLine = useApp((s) => s.removeLine)
+  const planned = useApp((s) => s.planned)
   const retired = useApp((s) => s.retired)
   const tags = useApp((s) => s.tags)
   const goals = useApp((s) => s.goals)
@@ -50,9 +54,11 @@ export function MonthEntry() {
   const previous = budgets.find((b) => b.month === addMonths(month, -1))
   const locked = budget?.closed ?? false
 
+  // Une catégorie peut porter plusieurs lignes : son montant est leur somme.
   const amountOf = (categoryId: string) =>
-    budget?.lines.find((line) => line.categoryId === categoryId)?.amount ?? 0
-  const lineOf = (categoryId: string) => budget?.lines.find((line) => line.categoryId === categoryId)
+    (budget?.lines ?? [])
+      .filter((line) => line.categoryId === categoryId)
+      .reduce((sum, line) => sum + line.amount, 0)
 
   /** Objectif alimenté par une catégorie d'épargne, s'il existe. */
   const goalFor = (categoryId: string) => {
@@ -76,6 +82,7 @@ export function MonthEntry() {
       // envies, ni les dépenses marquées ponctuelles, ni les charges que
       // l'utilisateur a déclarées « plus d'actualité ».
       if (category.flow === 'discretionary') continue
+      if (line.categoryId === 'inc_carryover') continue
       if (line.oneOff) continue
       if (retired[line.categoryId]) continue
       if (amountOf(line.categoryId) > 0) continue
@@ -171,10 +178,11 @@ export function MonthEntry() {
             <div className="shrink-0">
               <MonthDonut summary={summary} />
             </div>
-            <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-4 sm:gap-x-4">
+            <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-5 sm:gap-x-3">
               {[
                 { label: 'Revenus', value: euro(summary.totals.income), tone: 'mint' as const },
                 { label: 'Charges + dettes', value: euro(summary.totals.fixed + summary.totals.debt), tone: 'indigo' as const },
+                { label: 'Épargne', value: euro(summary.totals.saving), tone: 'amber' as const },
                 { label: 'Reste à vivre', value: euro(summary.livingAllowance), tone: 'amber' as const },
                 {
                   label: 'Fin de mois',
@@ -196,6 +204,52 @@ export function MonthEntry() {
 
       <ReferenceCard month={month} />
 
+      {/* Le calendrier a prévu des éléments pour ce mois : un geste les pose. */}
+      {(() => {
+        if (locked) return null
+        const lignes = budget?.lines ?? []
+        // Un élément déjà couvert ne se repropose pas : même intitulé, ou même
+        // montant sur la même catégorie — le loyer saisi à la main compte.
+        const attendus = planned.filter(
+          (item) =>
+            (item.recurrence === 'monthly' || item.month === month) &&
+            !lignes.some(
+              (l) =>
+                l.label === item.label ||
+                (l.categoryId === item.categoryId && l.amount === item.amount),
+            ),
+        )
+        if (attendus.length === 0) return null
+        return (
+          <Card>
+            <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-soft text-amber-deep">
+                <Icon name="CalendarDays" size={17} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[0.9rem] font-semibold text-ink">
+                  {attendus.length} élément(s) planifié(s) au calendrier
+                </span>
+                <span className="block truncate text-[0.75rem] text-ink-muted">
+                  {attendus.map((item) => `${item.label} (${euro(item.amount)})`).join(' · ')}
+                </span>
+              </span>
+              <Button
+                size="sm"
+                icon="CalendarCheck"
+                onClick={(event) => {
+                  burst(event.currentTarget as HTMLElement, ['amber', 'mint'])
+                  for (const item of attendus) addExtraLine(month, item.categoryId, item.label, item.amount)
+                  pushToast({ title: 'Mois prérempli', detail: `${attendus.length} ligne(s) posée(s)`, tone: 'amber', icon: 'CalendarCheck' })
+                }}
+              >
+                Préremplir
+              </Button>
+            </div>
+          </Card>
+        )
+      })()}
+
       {/* Sections de saisie */}
       <div className="flex flex-col gap-3">
         {FLOW_ORDER.map((flow) => {
@@ -203,8 +257,17 @@ export function MonthEntry() {
           const total = totalsByFlow(budget)[flow]
           const isOpen = openFlow === flow
           const categories = categoriesOf(flow)
-          const visible = categories.filter((c) => amountOf(c.id) > 0 || c.recurring)
-          const hidden = categories.filter((c) => !visible.includes(c))
+          // Chaque catégorie affiche toutes ses lignes ; une catégorie
+          // récurrente sans ligne garde une rangée vide, prête à saisir.
+          const rows: { category: (typeof categories)[number]; line?: import('../domain/types').BudgetLine }[] =
+            categories.flatMap((category) => {
+              const catLines = (budget?.lines ?? []).filter((l) => l.categoryId === category.id)
+              if (catLines.length > 0) return catLines.map((line) => ({ category, line }))
+              return category.recurring ? [{ category }] : []
+            })
+          const filled = (budget?.lines ?? []).filter(
+            (l) => CATEGORY_BY_ID[l.categoryId]?.flow === flow && l.amount > 0,
+          ).length
 
           return (
             <Card key={flow}>
@@ -220,7 +283,7 @@ export function MonthEntry() {
                 <span className="min-w-0 flex-1">
                   <span className="block font-display text-[1.05rem] leading-tight text-ink">{meta.label}</span>
                   <span className="block text-[0.78rem] text-ink-muted">
-                    {visible.filter((c) => amountOf(c.id) > 0).length} ligne(s) saisie(s)
+                    {filled} ligne(s) saisie(s)
                   </span>
                 </span>
                 <span className={clsx('tabular font-display text-xl', TONE[meta.tone].text)}>{euro(total)}</span>
@@ -238,24 +301,30 @@ export function MonthEntry() {
                   >
                     <div className="border-t border-line px-5 py-4">
                       <ul className="flex flex-col gap-1">
-                        {visible.map((category) => {
-                          const line = lineOf(category.id)
+                        {rows.map(({ category, line }) => {
+                          const rowKey = line ? lineKey(line) : category.id
                           const linked = category.flow === 'saving' ? goalFor(category.id) : null
-                          const detailOpen = detailFor === category.id
+                          const detailOpen = detailFor === rowKey
+                          // Le report est écrit par la clôture du mois
+                          // précédent : il se lit, il ne se saisit pas.
+                          const auto = category.id === 'inc_carryover'
+                          const payable = category.flow === 'fixed' || category.flow === 'debt' || category.flow === 'saving'
                           return (
-                          <li key={category.id} className="py-1.5">
-                          <div className="flex items-center gap-3">
+                          <li key={rowKey} className="py-1.5">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-ink-soft">
                               <Icon name={category.icon} size={15} />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <label htmlFor={`in-${category.id}`} className="block truncate text-[0.88rem] font-medium text-ink">
-                                {category.label}
+                              <label htmlFor={`in-${rowKey}`} className="block truncate text-[0.88rem] font-medium text-ink">
+                                {line?.label ?? category.label}
                               </label>
                               {linked ? (
                                 <span className="tabular block truncate text-[0.72rem] text-amber-deep">
                                   → « {linked.goal.label} » · {euro(linked.balance)} / {euro(linked.goal.targetAmount)}
                                 </span>
+                              ) : line?.label ? (
+                                <span className="block truncate text-[0.7rem] text-ink-muted">{category.label}</span>
                               ) : (
                                 category.hint && (
                                   <span className="block truncate text-[0.72rem] text-ink-muted">{category.hint}</span>
@@ -281,21 +350,47 @@ export function MonthEntry() {
                                 </span>
                               )}
                             </span>
+
+                            {/* Le billet : matérialise le paiement effectif. */}
+                            {payable && line && line.amount > 0 && (
+                              <button
+                                type="button"
+                                disabled={locked}
+                                onClick={(event) => {
+                                  if (!line.paid) burst(event.currentTarget, ['mint'], 8)
+                                  setLineDetails(month, rowKey, { paid: !line.paid })
+                                }}
+                                aria-pressed={line.paid ?? false}
+                                aria-label={line.paid ? 'Payé — cliquer pour annuler' : 'Marquer comme payé'}
+                                title={line.paid ? 'Payé' : 'Marquer comme payé'}
+                                className={clsx(
+                                  'grid size-8 shrink-0 place-items-center rounded-lg border transition',
+                                  line.paid
+                                    ? 'border-mint/40 bg-mint-soft text-mint-deep'
+                                    : 'border-line text-ink-muted hover:text-ink',
+                                )}
+                              >
+                                <Icon name="Banknote" size={15} />
+                              </button>
+                            )}
+
                             <span className="relative shrink-0">
                               <input
-                                id={`in-${category.id}`}
+                                id={`in-${rowKey}`}
                                 type="number"
                                 inputMode="decimal"
                                 min={0}
                                 step={1}
-                                disabled={locked}
-                                value={amountOf(category.id) || ''}
+                                disabled={locked || auto}
+                                value={line?.amount || ''}
                                 placeholder="0"
-                                onChange={(event) => setLine(month, category.id, Math.max(0, Number(event.target.value)))}
+                                onChange={(event) =>
+                                  setLine(month, category.id, Math.max(0, Number(event.target.value)), line?.key)
+                                }
                                 className={clsx(
-                                  'tabular w-28 rounded-xl border bg-surface px-3 py-2 pr-7 text-right text-[0.9rem] text-ink outline-none transition',
+                                  'tabular w-24 rounded-xl border bg-surface px-3 py-2 pr-7 text-right text-[0.9rem] text-ink outline-none transition sm:w-28',
                                   'disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted',
-                                  amountOf(category.id) > 0 ? 'border-line-strong' : 'border-line',
+                                  (line?.amount ?? 0) > 0 ? 'border-line-strong' : 'border-line',
                                   'focus:border-brand',
                                 )}
                               />
@@ -303,12 +398,12 @@ export function MonthEntry() {
                                 €
                               </span>
                             </span>
-                            {line && (
+                            {line && !auto && (
                               <button
                                 type="button"
-                                onClick={() => setDetailFor(detailOpen ? null : category.id)}
+                                onClick={() => setDetailFor(detailOpen ? null : rowKey)}
                                 aria-expanded={detailOpen}
-                                aria-label={`Étiquettes de ${category.label}`}
+                                aria-label={`Détails de ${line.label ?? category.label}`}
                                 className={clsx(
                                   'grid size-8 shrink-0 place-items-center rounded-lg border transition',
                                   detailOpen || (line.tagIds?.length ?? 0) > 0 || line.oneOff
@@ -319,16 +414,40 @@ export function MonthEntry() {
                                 <Icon name="Tag" size={14} />
                               </button>
                             )}
+                            {/* La croix retire la ligne du mois. */}
+                            {line && !auto && !locked && (
+                              <button
+                                type="button"
+                                onClick={() => removeLine(month, rowKey)}
+                                aria-label={`Retirer ${line.label ?? category.label}`}
+                                title="Retirer cette ligne"
+                                className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-muted transition hover:bg-berry-soft hover:text-berry-deep"
+                              >
+                                <Icon name="X" size={14} />
+                              </button>
+                            )}
                           </div>
 
                           {line && detailOpen && (
-                            <div className="ml-11 mt-2 flex flex-col gap-2 rounded-xl border border-line bg-surface-2 p-3">
+                            <div className="ml-11 mt-2 flex flex-col gap-2.5 rounded-xl border border-line bg-surface-2 p-3">
+                              <label className="flex items-center gap-2 text-[0.78rem] text-ink-soft">
+                                Intitulé
+                                <input
+                                  value={line.label ?? ''}
+                                  placeholder={category.label}
+                                  disabled={locked}
+                                  onChange={(event) =>
+                                    setLineDetails(month, rowKey, { label: event.target.value || undefined })
+                                  }
+                                  className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-[0.82rem] text-ink outline-none focus:border-brand"
+                                />
+                              </label>
                               <TagPicker
                                 selected={line.tagIds ?? []}
                                 disabled={locked}
                                 onToggle={(tagId) => {
                                   const current = line.tagIds ?? []
-                                  setLineDetails(month, category.id, {
+                                  setLineDetails(month, rowKey, {
                                     tagIds: current.includes(tagId)
                                       ? current.filter((id) => id !== tagId)
                                       : [...current, tagId],
@@ -342,7 +461,7 @@ export function MonthEntry() {
                                     disabled={locked}
                                     checked={line.oneOff ?? false}
                                     onChange={(event) =>
-                                      setLineDetails(month, category.id, { oneOff: event.target.checked })
+                                      setLineDetails(month, rowKey, { oneOff: event.target.checked })
                                     }
                                     className="size-4 accent-[var(--c-brand)]"
                                   />
@@ -356,24 +475,30 @@ export function MonthEntry() {
                         })}
                       </ul>
 
-                      {hidden.length > 0 && !locked && (
+                      {!locked && (
                         <div className="mt-3 border-t border-line pt-3">
                           <label className="flex items-center gap-2 text-[0.78rem] text-ink-muted">
                             <Icon name="Plus" size={14} />
                             Ajouter une ligne
                             <select
-                              className="ml-auto rounded-lg border border-line bg-surface px-3 py-1.5 text-[0.82rem] text-ink outline-none focus:border-brand"
+                              className="ml-auto max-w-[14rem] rounded-lg border border-line bg-surface px-3 py-1.5 text-[0.82rem] text-ink outline-none focus:border-brand"
                               value=""
                               onChange={(event) => {
-                                if (event.target.value) setLine(month, event.target.value, 1)
+                                if (event.target.value) addExtraLine(month, event.target.value)
                               }}
                             >
                               <option value="">Choisir…</option>
-                              {hidden.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                  {category.label}
-                                </option>
-                              ))}
+                              {categories
+                                .filter((category) => category.id !== 'inc_carryover')
+                                .map((category) => {
+                                  const deja = (budget?.lines ?? []).filter((l) => l.categoryId === category.id).length
+                                  return (
+                                    <option key={category.id} value={category.id}>
+                                      {category.label}
+                                      {deja > 0 ? ` (${deja + 1}ᵉ ligne)` : ''}
+                                    </option>
+                                  )
+                                })}
                             </select>
                           </label>
                         </div>
