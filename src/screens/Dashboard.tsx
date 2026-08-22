@@ -97,8 +97,29 @@ export function Dashboard() {
         Ils vivaient éparpillés dans la carte de répartition — deux grandes
         tuiles plus trois petites qui répétaient les mêmes montants.
       */}
-      <div ref={kpiRef} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div ref={kpiRef} className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
+          {
+            label: 'Revenus',
+            value: summary.totals.income,
+            format: euro,
+            tone: 'mint' as const,
+            hint: 'Total du mois, report compris',
+          },
+          {
+            label: 'Charges fixes',
+            value: summary.totals.fixed,
+            format: euro,
+            tone: summary.fixedRate > 0.5 ? ('berry' as const) : ('indigo' as const),
+            hint: summary.fixedRate > 0.5 ? 'Au-delà du repère de 50 %' : 'Sous le repère de 50 %',
+          },
+          {
+            label: 'Épargne',
+            value: summary.totals.saving,
+            format: euro,
+            tone: 'amber' as const,
+            hint: `${Math.round(summary.savingRate * 100)} % de votre revenu`,
+          },
           {
             label: 'Reste à vivre',
             value: summary.livingAllowance,
@@ -107,25 +128,18 @@ export function Dashboard() {
             hint: 'Après charges et dettes',
           },
           {
-            label: 'Fin de mois',
+            label: 'Dettes',
+            value: summary.totals.debt,
+            format: euro,
+            tone: summary.totals.debt > 0 ? ('berry' as const) : ('mint' as const),
+            hint: summary.totals.debt > 0 ? `${Math.round(summary.debtRate * 100)} % de votre revenu` : 'Aucune dette ce mois-ci',
+          },
+          {
+            label: 'Fin du mois',
             value: summary.endOfMonth,
             format: euroSigned,
-            tone: summary.endOfMonth >= 0 ? ('amber' as const) : ('berry' as const),
+            tone: summary.endOfMonth >= 0 ? ('mint' as const) : ('berry' as const),
             hint: 'Épargne et envies passées',
-          },
-          {
-            label: "Taux d'épargne",
-            value: summary.savingRate * 100,
-            format: (v: number) => `${Math.round(v)} %`,
-            tone: 'amber' as const,
-            hint: summary.savingRate >= 0.1 ? 'Au-dessus du repère de 10 %' : 'Repère : 10 %',
-          },
-          {
-            label: 'Charges fixes',
-            value: summary.fixedRate * 100,
-            format: (v: number) => `${Math.round(v)} %`,
-            tone: summary.fixedRate > 0.5 ? ('berry' as const) : ('indigo' as const),
-            hint: summary.fixedRate > 0.5 ? 'Au-delà du repère de 50 %' : 'Sous le repère de 50 %',
           },
         ].map((kpi) => (
           <div key={kpi.label} className={clsx('rounded-2xl border p-3.5 sm:p-4', TONE[kpi.tone].bg, TONE[kpi.tone].border)}>
@@ -145,7 +159,7 @@ export function Dashboard() {
           {/* Le mois en cours */}
           <Card>
             <CardHeader
-              title="Où part votre argent"
+              title="Où part mon argent"
               hint={`Sur ${euro(summary.totals.income)} de revenus`}
               icon="Wallet"
               action={
@@ -224,6 +238,23 @@ export function Dashboard() {
               <TrendChart budgets={budgets} />
             </div>
           </Card>
+
+          {/* Mon année : le pont vers la vue annuelle et le calendrier */}
+          <Link
+            to="/annee"
+            className="card card-hover flex items-center gap-3 px-5 py-4"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-soft text-amber-deep">
+              <Icon name="CalendarRange" size={17} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[0.95rem] font-semibold text-ink">Mon année</span>
+              <span className="block truncate text-[0.78rem] text-ink-muted">
+                Récap des douze mois et calendrier des charges à venir
+              </span>
+            </span>
+            <Icon name="ArrowRight" size={16} className="shrink-0 text-ink-muted" />
+          </Link>
 
           {/* Objectif principal */}
           {mainGoal && projection && (

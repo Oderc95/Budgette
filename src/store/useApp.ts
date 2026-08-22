@@ -7,11 +7,13 @@ import type {
   Group,
   MonthBudget,
   MonthKey,
+  PlannedItem,
   Profile,
   SavingsPocket,
   Tag,
   UnlockedBadge,
 } from '../domain/types'
+import { lineKey } from '../domain/types'
 import {
   MOCK_BUDGETS,
   MOCK_CHALLENGE_PROGRESS,
@@ -19,13 +21,15 @@ import {
   MOCK_GOALS,
   MOCK_GROUPS,
   MOCK_POCKETS,
+  MOCK_PLANNED,
   MOCK_PROFILE,
   MOCK_TAGS,
   MOCK_UNLOCKED,
 } from '../data/mock'
 import { CHALLENGE_BY_ID } from '../domain/challenges'
 import { pocketCategoryId } from '../domain/budget'
-import { dayKey, monthKey, weekKey } from '../lib/format'
+import { CATEGORY_BY_ID } from '../domain/categories'
+import { addMonths, dayKey, monthKey, weekKey } from '../lib/format'
 import { streakMultiplier } from '../domain/gamification'
 
 export type ThemeChoice = 'system' | 'light' | 'dark'
@@ -81,13 +85,17 @@ interface AppState {
   retired: Record<string, MonthKey>
   friends: Friend[]
   groups: Group[]
+  /** Charges, dettes et versements définis à l'avance au calendrier. */
+  planned: PlannedItem[]
 
   signIn: () => void
   signOut: () => void
   completeOnboarding: (input: { strategyId: string; goal: Goal; displayName?: string }) => void
   setTheme: (theme: ThemeChoice) => void
   setActiveMonth: (month: MonthKey) => void
-  setLine: (month: MonthKey, categoryId: string, amount: number) => void
+  setLine: (month: MonthKey, categoryId: string, amount: number, key?: string) => void
+  addExtraLine: (month: MonthKey, categoryId: string, label?: string, amount?: number) => void
+  removeLine: (month: MonthKey, key: string) => void
   ensureMonth: (month: MonthKey) => void
   closeMonth: (month: MonthKey, mood: 1 | 2 | 3 | 4 | 5, note?: string) => void
   reopenMonth: (month: MonthKey) => void
@@ -100,8 +108,8 @@ interface AppState {
   addTag: (tag: Tag) => void
   setLineDetails: (
     month: MonthKey,
-    categoryId: string,
-    details: { tagIds?: string[]; oneOff?: boolean },
+    key: string,
+    details: { tagIds?: string[]; oneOff?: boolean; label?: string; paid?: boolean },
   ) => void
   setReferenceMonth: (month: MonthKey | null) => void
   retireCategory: (categoryId: string, month: MonthKey) => void
@@ -117,6 +125,8 @@ interface AppState {
   leaveGroup: (groupId: string) => void
   contributeToGroup: (groupId: string, month: MonthKey, amount: number) => void
   dismissGoalPrompt: () => void
+  addPlanned: (item: PlannedItem) => void
+  removePlanned: (id: string) => void
   grantXp: (amount: number, reason: string) => void
   pushToast: (toast: Omit<Toast, 'id'>) => void
   dismissToast: (id: number) => void
@@ -144,6 +154,7 @@ const initial = () => ({
   retired: {} as Record<string, MonthKey>,
   friends: MOCK_FRIENDS,
   groups: MOCK_GROUPS,
+  planned: MOCK_PLANNED,
 })
 
 function latestMonth(budgets: MonthBudget[]): MonthKey {
@@ -210,7 +221,7 @@ export const useApp = create<AppState>()(
               },
         ),
 
-      setLine: (month, categoryId, amount) =>
+      setLine: (month, categoryId, amount, key) =>
         set((state) => {
           const budgets = state.budgets.some((b) => b.month === month)
             ? state.budgets
@@ -218,18 +229,42 @@ export const useApp = create<AppState>()(
                 a.month.localeCompare(b.month),
               )
 
+          const cible = key ?? categoryId
           return {
             budgets: budgets.map((budget) => {
               if (budget.month !== month || budget.closed) return budget
-              // Le montant change, mais les étiquettes, la note et le
+              // Le montant change, mais les étiquettes, l'intitulé et le
               // caractère ponctuel de la ligne survivent à la modification.
-              const existing = budget.lines.find((l) => l.categoryId === categoryId)
-              const lines = budget.lines.filter((l) => l.categoryId !== categoryId)
-              if (amount > 0) lines.push({ ...existing, categoryId, amount })
+              const existing = budget.lines.find((l) => lineKey(l) === cible)
+              const lines = budget.lines.filter((l) => lineKey(l) !== cible)
+              if (amount > 0) lines.push({ ...existing, categoryId, key, amount })
               return { ...budget, lines }
             }),
           }
         }),
+
+      // Une ligne supplémentaire sous une catégorie déjà servie : elle reçoit
+      // sa propre clé et, souvent, son propre intitulé.
+      addExtraLine: (month, categoryId, label, amount = 0) => {
+        get().ensureMonth(month)
+        set((state) => ({
+          budgets: state.budgets.map((budget) => {
+            if (budget.month !== month || budget.closed) return budget
+            const existants = budget.lines.filter((l) => l.categoryId === categoryId).length
+            const key = `${categoryId}~${Date.now().toString(36)}${existants}`
+            return { ...budget, lines: [...budget.lines, { categoryId, key, label, amount }] }
+          }),
+        }))
+      },
+
+      removeLine: (month, key) =>
+        set((state) => ({
+          budgets: state.budgets.map((budget) =>
+            budget.month !== month || budget.closed
+              ? budget
+              : { ...budget, lines: budget.lines.filter((l) => lineKey(l) !== key) },
+          ),
+        })),
 
       closeMonth: (month, mood, note) => {
         const budget = get().budgets.find((b) => b.month === month)
@@ -242,6 +277,23 @@ export const useApp = create<AppState>()(
           // c'est lui qui dira ce qui est attendu le mois prochain.
           referenceMonth: month,
         }))
+        // Le reste de fin de mois se reporte en tête des revenus du mois
+        // suivant : l'argent qui n'a pas été dépensé n'a pas disparu.
+        const totals = budget.lines.reduce(
+          (acc, line) => {
+            const category = CATEGORY_BY_ID[line.categoryId]
+            if (category) acc[category.flow] = (acc[category.flow] ?? 0) + line.amount
+            return acc
+          },
+          {} as Record<string, number>,
+        )
+        const reste =
+          (totals.income ?? 0) - (totals.fixed ?? 0) - (totals.debt ?? 0) - (totals.saving ?? 0) - (totals.discretionary ?? 0)
+        if (reste > 0) {
+          const suivant = addMonths(month, 1)
+          get().ensureMonth(suivant)
+          get().setLine(suivant, 'inc_carryover', Math.round(reste))
+        }
         get().grantXp(CHALLENGE_BY_ID.m_close.xp, 'Mois clôturé')
       },
 
@@ -328,15 +380,13 @@ export const useApp = create<AppState>()(
 
       addTag: (tag) => set((state) => ({ tags: [...state.tags, tag] })),
 
-      setLineDetails: (month, categoryId, details) =>
+      setLineDetails: (month, key, details) =>
         set((state) => ({
           budgets: state.budgets.map((budget) => {
             if (budget.month !== month) return budget
             return {
               ...budget,
-              lines: budget.lines.map((line) =>
-                line.categoryId === categoryId ? { ...line, ...details } : line,
-              ),
+              lines: budget.lines.map((line) => (lineKey(line) === key ? { ...line, ...details } : line)),
             }
           }),
         })),
@@ -413,6 +463,9 @@ export const useApp = create<AppState>()(
 
       dismissGoalPrompt: () => set({ goalPromptPending: false }),
 
+      addPlanned: (item) => set((state) => ({ planned: [...state.planned, item] })),
+      removePlanned: (id) => set((state) => ({ planned: state.planned.filter((p) => p.id !== id) })),
+
       // La fin de la visite enchaîne sur la définition de l'objectif.
       completeTour: () => set({ tourDone: true, goalPromptPending: true }),
 
@@ -429,7 +482,7 @@ export const useApp = create<AppState>()(
        * l'ancien profil avec le nouveau jeu. La v3 introduit les étiquettes, les
        * groupes et le mois de référence.
        */
-      version: 3,
+      version: 4,
       migrate: () => ({ ...initial() }),
     },
   ),

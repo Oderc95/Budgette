@@ -18,6 +18,7 @@ export const FLOW_ORDER: Flow[] = ['income', 'fixed', 'debt', 'saving', 'discret
  */
 export const CATEGORIES: Category[] = [
   // Revenus
+  { id: 'inc_carryover', label: 'Report du mois précédent', flow: 'income', icon: 'Undo2', hint: 'Reste de fin de mois, reporté à la clôture' },
   { id: 'inc_salary', label: 'Salaire', flow: 'income', icon: 'Wallet', recurring: true },
   { id: 'inc_unemployment', label: 'France Travail', flow: 'income', icon: 'FileText' },
   { id: 'inc_family', label: 'Allocations familiales', flow: 'income', icon: 'Baby' },

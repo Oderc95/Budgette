@@ -19,7 +19,7 @@ import { monthKey } from '../lib/format'
  * vers un écran plus à droite dans la barre fait glisser le contenu vers la
  * gauche, et inversement — le mouvement raconte la navigation.
  */
-const ROUTE_ORDER = ['/', '/mois', '/quetes', '/objectifs', '/jardin', '/profil', '/admin']
+const ROUTE_ORDER = ['/', '/mois', '/annee', '/quetes', '/objectifs', '/jardin', '/profil', '/admin']
 
 const ECRAN = {
   enter: (direction: number) => ({ opacity: 0, x: 44 * direction, scale: 0.985 }),
@@ -37,12 +37,17 @@ const ECRAN = {
   }),
 }
 
+/*
+ * La barre d'onglets mobile n'affiche que les cinq premières entrées : « Mon
+ * année » vit après, accessible depuis la barre latérale et l'écran d'accueil.
+ */
 const NAV = [
   { to: '/', label: 'Accueil', icon: 'LayoutDashboard', end: true },
   { to: '/mois', label: 'Mon mois', icon: 'PenLine' },
   { to: '/quetes', label: 'Quêtes', icon: 'ListChecks' },
   { to: '/objectifs', label: 'Objectifs', icon: 'Target' },
   { to: '/jardin', label: 'Jardin', icon: 'Sprout' },
+  { to: '/annee', label: 'Mon année', icon: 'CalendarRange' },
 ]
 
 /** Applique le choix de thème sur l'élément racine. */

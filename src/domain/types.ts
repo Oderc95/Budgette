@@ -36,6 +36,16 @@ export interface Tag {
 export interface BudgetLine {
   categoryId: string
   amount: number
+  /**
+   * Identité de la ligne dans son mois. Absente, c'est la catégorie qui
+   * identifie — le cas courant. Une catégorie peut porter plusieurs lignes :
+   * chacune reçoit alors sa propre clé.
+   */
+  key?: string
+  /** Intitulé personnalisé, qui remplace le nom de la catégorie à l'écran. */
+  label?: string
+  /** Paiement matérialisé : la charge a réellement été réglée. */
+  paid?: boolean
   /** Précision libre saisie par l'utilisateur (« Deliveroo x4 »). */
   note?: string
   /** Étiquettes collées sur la ligne. */
@@ -45,6 +55,27 @@ export interface BudgetLine {
    * mois sert de référence.
    */
   oneOff?: boolean
+}
+
+/** Clé effective d'une ligne : la sienne, sinon sa catégorie. */
+export function lineKey(line: Pick<BudgetLine, 'categoryId' | 'key'>): string {
+  return line.key ?? line.categoryId
+}
+
+/**
+ * Élément planifié au calendrier : une charge, une dette ou un versement
+ * défini à l'avance, qui sert à préremplir les mois à venir.
+ */
+export interface PlannedItem {
+  id: string
+  label: string
+  categoryId: string
+  amount: number
+  /** Jour du mois (1-31), pour l'affichage au calendrier. */
+  day: number
+  recurrence: 'monthly' | 'once'
+  /** Mois visé, uniquement pour une occurrence unique. */
+  month?: MonthKey
 }
 
 /** Identifiant de mois au format `AAAA-MM`. */
