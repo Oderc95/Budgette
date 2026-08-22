@@ -140,19 +140,19 @@ export function MonthEntry() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           {previous && !locked && (
-            <Button variant="outline" icon="Undo2" onClick={copyPrevious}>
+            <Button size="sm" variant="outline" icon="Undo2" onClick={copyPrevious}>
               Reprendre {monthLabel(previous.month).split(' ')[0]}
             </Button>
           )}
           {locked ? (
-            <Button variant="ghost" icon="RotateCcw" onClick={() => reopenMonth(month)}>
+            <Button size="sm" variant="ghost" icon="RotateCcw" onClick={() => reopenMonth(month)}>
               Rouvrir
             </Button>
           ) : (
-            <Button icon="BookCheck" onClick={() => setClosing(true)} disabled={filledCount === 0}>
-              Clôturer le mois
+            <Button size="sm" icon="BookCheck" onClick={() => setClosing(true)} disabled={filledCount === 0}>
+              Clôturer
             </Button>
           )}
         </div>

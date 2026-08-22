@@ -2,9 +2,10 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
-import { AnimatedNumber, Button, Card, CardHeader, Chip, Dial, Progress, Stat } from '../components/ui/primitives'
+import { Button, Card, CardHeader, Chip, Dial, Progress } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { CountUp } from '../components/CountUp'
+import { useCascade } from '../lib/useCascade'
 import { Icon } from '../components/Icon'
 import { Mascot } from '../components/Mascot'
 import { FlowBar } from '../components/FlowBar'
@@ -15,7 +16,7 @@ import { buildInsights } from '../domain/insights'
 import { CHALLENGES } from '../domain/challenges'
 import { GROWTH_STAGES, levelFromXp, nextStage, stageForLevel } from '../domain/gamification'
 import { STRATEGY_BY_ID } from '../domain/strategy'
-import { euro, euroSigned, monthKey, monthLabel, percent } from '../lib/format'
+import { euro, euroSigned, monthKey, monthLabel } from '../lib/format'
 
 export function Dashboard() {
   const profile = useApp((s) => s.profile)
@@ -49,6 +50,8 @@ export function Dashboard() {
   const projection = mainGoal
     ? projectGoal(mainGoal.targetAmount, saved, mainGoal.deadline, month, summary.livingAllowance)
     : null
+
+  const kpiRef = useCascade<HTMLDivElement>(':scope > *', [], { step: 60 })
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bel après-midi' : 'Bonsoir'
@@ -89,13 +92,61 @@ export function Dashboard() {
         </div>
       </header>
 
+      {/*
+        La bande d'indicateurs : les quatre chiffres du mois, une seule fois.
+        Ils vivaient éparpillés dans la carte de répartition — deux grandes
+        tuiles plus trois petites qui répétaient les mêmes montants.
+      */}
+      <div ref={kpiRef} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          {
+            label: 'Reste à vivre',
+            value: summary.livingAllowance,
+            format: euro,
+            tone: 'mint' as const,
+            hint: 'Après charges et dettes',
+          },
+          {
+            label: 'Fin de mois',
+            value: summary.endOfMonth,
+            format: euroSigned,
+            tone: summary.endOfMonth >= 0 ? ('amber' as const) : ('berry' as const),
+            hint: 'Épargne et envies passées',
+          },
+          {
+            label: "Taux d'épargne",
+            value: summary.savingRate * 100,
+            format: (v: number) => `${Math.round(v)} %`,
+            tone: 'amber' as const,
+            hint: summary.savingRate >= 0.1 ? 'Au-dessus du repère de 10 %' : 'Repère : 10 %',
+          },
+          {
+            label: 'Charges fixes',
+            value: summary.fixedRate * 100,
+            format: (v: number) => `${Math.round(v)} %`,
+            tone: summary.fixedRate > 0.5 ? ('berry' as const) : ('indigo' as const),
+            hint: summary.fixedRate > 0.5 ? 'Au-delà du repère de 50 %' : 'Sous le repère de 50 %',
+          },
+        ].map((kpi) => (
+          <div key={kpi.label} className={clsx('rounded-2xl border p-3.5 sm:p-4', TONE[kpi.tone].bg, TONE[kpi.tone].border)}>
+            <p className="eyebrow text-[0.6rem] sm:text-[0.68rem]">{kpi.label}</p>
+            <CountUp
+              value={kpi.value}
+              format={kpi.format}
+              className={clsx('tabular mt-1 block font-display text-xl leading-none sm:text-[1.7rem]', TONE[kpi.tone].deep)}
+            />
+            <p className="mt-1.5 hidden text-[0.72rem] leading-snug text-ink-muted sm:block">{kpi.hint}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-5">
           {/* Le mois en cours */}
           <Card>
             <CardHeader
               title="Où part votre argent"
-              hint="Où va le revenu du mois"
+              hint={`Sur ${euro(summary.totals.income)} de revenus`}
               icon="Wallet"
               action={
                 <Link to="/mois" className="text-[0.8rem] font-semibold text-brand-deep hover:underline">
@@ -104,60 +155,34 @@ export function Dashboard() {
               }
             />
             <div className="px-5 pb-5">
-              <div className="mb-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-mint/30 bg-mint-soft p-4">
-                  <p className="eyebrow">Reste à vivre</p>
-                  <AnimatedNumber
-                    value={summary.livingAllowance}
-                    format={euro}
-                    className="tabular mt-1 block font-display text-3xl leading-none text-mint-deep"
-                  />
-                  <p className="mt-1.5 text-[0.75rem] leading-snug text-ink-muted">
-                    Après le loyer, les charges et les dettes. C’est votre vraie marge de manœuvre.
-                  </p>
-                </div>
-                <div
-                  className={clsx(
-                    'rounded-2xl border p-4',
-                    summary.endOfMonth >= 0 ? 'border-amber/30 bg-amber-soft' : 'border-berry/30 bg-berry-soft',
-                  )}
-                >
-                  <p className="eyebrow">Reste en fin de mois</p>
-                  <AnimatedNumber
-                    value={summary.endOfMonth}
-                    format={euroSigned}
-                    className={clsx(
-                      'tabular mt-1 block font-display text-3xl leading-none',
-                      summary.endOfMonth >= 0 ? 'text-amber-deep' : 'text-berry-deep',
-                    )}
-                  />
-                  <p className="mt-1.5 text-[0.75rem] leading-snug text-ink-muted">
-                    Une fois l’épargne mise de côté et les plaisirs passés.
-                  </p>
-                </div>
-              </div>
-
               <FlowBar totals={summary.totals} />
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <Stat label="Revenus" value={euro(summary.totals.income)} icon="Sprout" tone="mint" />
-                <Stat
-                  label="Taux d'épargne"
-                  value={percent(summary.savingRate)}
-                  icon="PiggyBank"
-                  tone="amber"
-                  hint={summary.savingRate >= 0.1 ? 'Au-dessus du repère de 10 %' : 'Repère conseillé : 10 %'}
-                  emphasis={summary.savingRate >= 0.1}
-                />
-                <Stat
-                  label="Charges fixes"
-                  value={percent(summary.fixedRate)}
-                  icon="House"
-                  tone={summary.fixedRate > 0.5 ? 'berry' : 'indigo'}
-                  hint={summary.fixedRate > 0.5 ? 'Au-delà du repère de 50 %' : 'Sous le repère de 50 %'}
-                  emphasis={summary.fixedRate > 0.5}
-                />
-              </div>
+              {/* Les postes les plus lourds du mois, sous la répartition
+                  qu'ils composent : une seule carte raconte la dépense. */}
+              <ul className="mt-5 flex flex-col gap-1 border-t border-line pt-4">
+                {topSpending.map((item) => {
+                  const share = summary.totals.income > 0 ? item.amount / summary.totals.income : 0
+                  return (
+                    <li key={item.categoryId} className="flex items-center gap-3 py-2">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-ink-soft">
+                        <Icon name={item.icon} size={15} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className="truncate text-[0.88rem] font-medium text-ink">{item.label}</span>
+                          <span className="tabular shrink-0 text-[0.88rem] font-semibold text-ink">{euro(item.amount)}</span>
+                        </span>
+                        <span className="mt-1.5 block">
+                          <Progress value={share} tone="orchid" height={5} label={item.label} />
+                        </span>
+                      </span>
+                      <span className="tabular w-10 shrink-0 text-right text-[0.75rem] text-ink-muted">
+                        {Math.round(share * 100)} %
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
             </div>
           </Card>
 
@@ -200,34 +225,36 @@ export function Dashboard() {
             </div>
           </Card>
 
-          {/* Postes principaux */}
-          <Card>
-            <CardHeader title="Vos plus gros postes" hint={`Sur ${monthLabel(month)}`} icon="ShoppingBasket" tone="orchid" />
-            <ul className="flex flex-col gap-1 px-5 pb-5">
-              {topSpending.map((item) => {
-                const share = summary.totals.income > 0 ? item.amount / summary.totals.income : 0
-                return (
-                  <li key={item.categoryId} className="flex items-center gap-3 py-2">
-                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-ink-soft">
-                      <Icon name={item.icon} size={15} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline justify-between gap-3">
-                        <span className="truncate text-[0.88rem] font-medium text-ink">{item.label}</span>
-                        <span className="tabular shrink-0 text-[0.88rem] font-semibold text-ink">{euro(item.amount)}</span>
-                      </span>
-                      <span className="mt-1.5 block">
-                        <Progress value={share} tone="orchid" height={5} label={item.label} />
-                      </span>
-                    </span>
-                    <span className="tabular w-10 shrink-0 text-right text-[0.75rem] text-ink-muted">
-                      {Math.round(share * 100)} %
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          </Card>
+          {/* Objectif principal */}
+          {mainGoal && projection && (
+            <Card>
+              <CardHeader title="Votre objectif" hint={strategy ? `Stratégie ${strategy.name}` : undefined} icon="Target" tone="mint" />
+              <div className="px-5 pb-5">
+                <p className="font-display text-lg leading-tight text-ink">{mainGoal.label}</p>
+                <p className="tabular mt-2 text-[0.85rem] text-ink-soft">
+                  <span className="font-semibold text-mint-deep">{euro(saved)}</span> sur {euro(mainGoal.targetAmount)}
+                </p>
+                <div className="mt-2">
+                  <Progress value={saved / mainGoal.targetAmount} tone="mint" />
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-surface-2 p-3">
+                    <dt className="eyebrow">Effort mensuel</dt>
+                    <dd className="tabular mt-1 font-display text-lg text-ink">{euro(projection.monthlyEffort)}</dd>
+                  </div>
+                  <div className="rounded-xl bg-surface-2 p-3">
+                    <dt className="eyebrow">Il reste</dt>
+                    <dd className="tabular mt-1 font-display text-lg text-ink">{projection.monthsRemaining} mois</dd>
+                  </div>
+                </dl>
+                <Link to="/objectifs" className="mt-4 block">
+                  <Button variant="outline" full iconRight="ArrowRight">
+                    Gérer mes objectifs
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Colonne latérale */}
@@ -260,9 +287,9 @@ export function Dashboard() {
             <div className="flex flex-col items-center px-5 pb-5">
               <Dial value={health.total / 100} tone={healthTone}>
                 <span>
-                  <AnimatedNumber
+                  <CountUp
                     value={health.total}
-                    format={(n) => String(Math.round(n))}
+                    format={(n: number) => String(Math.round(n))}
                     className={clsx('tabular block font-display text-3xl leading-none', TONE[healthTone].text)}
                   />
                   <span className="mt-1 block text-[0.72rem] font-semibold text-ink-muted">{health.grade}</span>
@@ -305,37 +332,6 @@ export function Dashboard() {
               ))}
             </div>
           </Card>
-
-          {/* Objectif principal */}
-          {mainGoal && projection && (
-            <Card>
-              <CardHeader title="Votre objectif" hint={strategy ? `Stratégie ${strategy.name}` : undefined} icon="Target" tone="mint" />
-              <div className="px-5 pb-5">
-                <p className="font-display text-lg leading-tight text-ink">{mainGoal.label}</p>
-                <p className="tabular mt-2 text-[0.85rem] text-ink-soft">
-                  <span className="font-semibold text-mint-deep">{euro(saved)}</span> sur {euro(mainGoal.targetAmount)}
-                </p>
-                <div className="mt-2">
-                  <Progress value={saved / mainGoal.targetAmount} tone="mint" />
-                </div>
-                <dl className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-surface-2 p-3">
-                    <dt className="eyebrow">Effort mensuel</dt>
-                    <dd className="tabular mt-1 font-display text-lg text-ink">{euro(projection.monthlyEffort)}</dd>
-                  </div>
-                  <div className="rounded-xl bg-surface-2 p-3">
-                    <dt className="eyebrow">Il reste</dt>
-                    <dd className="tabular mt-1 font-display text-lg text-ink">{projection.monthsRemaining} mois</dd>
-                  </div>
-                </dl>
-                <Link to="/objectifs" className="mt-4 block">
-                  <Button variant="outline" full iconRight="ArrowRight">
-                    Gérer mes objectifs
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-          )}
         </div>
       </div>
     </div>
