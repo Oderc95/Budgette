@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
@@ -8,13 +8,13 @@ import { Button, Card, Chip } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { Confetti } from '../components/Confetti'
-import { MonthDonut } from '../components/MonthDonut'
+import { BudgetVsReal } from '../components/BudgetVsReal'
 import { ReferenceCard } from '../components/ReferenceCard'
 import { TagPicker } from '../components/TagPicker'
 import { burst } from '../lib/wow'
 import { addMonths, euro, euroSigned, monthKey, monthLabel } from '../lib/format'
 import { lineKey } from '../domain/types'
-import type { Flow } from '../domain/types'
+import type { BudgetLine, Flow } from '../domain/types'
 
 const MOODS: { value: 1 | 2 | 3 | 4 | 5; label: string; icon: string }[] = [
   { value: 1, label: 'Très tendu', icon: 'TrendingDown' },
@@ -165,41 +165,10 @@ export function MonthEntry() {
         </div>
       </header>
 
-      {/* Synthèse permanente */}
-      <div className="sticky top-[3.75rem] z-20 lg:top-3">
-        <Card className="relative">
-          {celebrate && <Confetti />}
-          {/*
-            L'anneau montre la répartition d'un coup d'œil, les quatre chiffres
-            la précisent. L'ensemble reste bas : sur mobile, cette synthèse est
-            collante et ne doit jamais recouvrir la saisie qu'elle résume.
-          */}
-          <div className="flex items-center gap-2 px-3 py-2 sm:gap-4 sm:px-5 sm:py-3">
-            <div className="shrink-0">
-              <MonthDonut summary={summary} />
-            </div>
-            <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-5 sm:gap-x-3">
-              {[
-                { label: 'Revenus', value: euro(summary.totals.income), tone: 'mint' as const },
-                { label: 'Charges + dettes', value: euro(summary.totals.fixed + summary.totals.debt), tone: 'indigo' as const },
-                { label: 'Épargne', value: euro(summary.totals.saving), tone: 'amber' as const },
-                { label: 'Reste à vivre', value: euro(summary.livingAllowance), tone: 'amber' as const },
-                {
-                  label: 'Fin de mois',
-                  value: euroSigned(summary.endOfMonth),
-                  tone: summary.endOfMonth >= 0 ? ('mint' as const) : ('berry' as const),
-                },
-              ].map((cell) => (
-                <div key={cell.label} className="min-w-0">
-                  <p className="eyebrow truncate text-[0.58rem] sm:text-[0.68rem]">{cell.label}</p>
-                  <p className={clsx('tabular mt-0.5 font-display text-base leading-none sm:text-xl', TONE[cell.tone].text)}>
-                    {cell.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
+      {/* La partie haute : budget prévu contre réel saisi, façon tableau de bord */}
+      <div className="relative">
+        {celebrate && <Confetti />}
+        <BudgetVsReal month={month} summary={summary} />
       </div>
 
       <ReferenceCard month={month} />
@@ -220,31 +189,54 @@ export function MonthEntry() {
             ),
         )
         if (attendus.length === 0) return null
+        const totalAttendu = attendus.reduce((sum, item) => sum + item.amount, 0)
         return (
           <Card>
-            <div className="flex flex-wrap items-center gap-3 px-5 py-4">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-soft text-amber-deep">
-                <Icon name="CalendarDays" size={17} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[0.9rem] font-semibold text-ink">
-                  {attendus.length} élément(s) planifié(s) au calendrier
+            <div className="px-5 py-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-soft text-amber-deep">
+                  <Icon name="CalendarDays" size={17} />
                 </span>
-                <span className="block truncate text-[0.75rem] text-ink-muted">
-                  {attendus.map((item) => `${item.label} (${euro(item.amount)})`).join(' · ')}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[0.9rem] font-semibold text-ink">
+                    Prévu au calendrier pour {monthLabel(month)}
+                  </span>
+                  <span className="tabular block text-[0.75rem] text-ink-muted">
+                    {attendus.length} élément(s) · {euro(totalAttendu)} au total
+                  </span>
                 </span>
-              </span>
-              <Button
-                size="sm"
-                icon="CalendarCheck"
-                onClick={(event) => {
-                  burst(event.currentTarget as HTMLElement, ['amber', 'mint'])
-                  for (const item of attendus) addExtraLine(month, item.categoryId, item.label, item.amount)
-                  pushToast({ title: 'Mois prérempli', detail: `${attendus.length} ligne(s) posée(s)`, tone: 'amber', icon: 'CalendarCheck' })
-                }}
-              >
-                Préremplir
-              </Button>
+                <Button
+                  size="sm"
+                  icon="CalendarCheck"
+                  onClick={(event) => {
+                    burst(event.currentTarget as HTMLElement, ['amber', 'mint'])
+                    for (const item of attendus) addExtraLine(month, item.categoryId, item.label, item.amount)
+                    pushToast({ title: 'Mois prérempli', detail: `${attendus.length} ligne(s) posée(s)`, tone: 'amber', icon: 'CalendarCheck' })
+                  }}
+                >
+                  Tout préremplir
+                </Button>
+              </div>
+              {/* Le détail : chaque élément prévu, son poste et son montant. */}
+              <ul className="mt-3 flex flex-col gap-1.5">
+                {attendus.map((item) => {
+                  const category = CATEGORY_BY_ID[item.categoryId]
+                  return (
+                    <li key={item.id} className="flex items-center gap-2.5 rounded-xl border border-line bg-surface-2 px-3 py-2">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-surface text-ink-soft">
+                        <Icon name={category?.icon ?? 'CalendarDays'} size={13} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[0.85rem] font-medium text-ink">{item.label}</span>
+                        <span className="block truncate text-[0.7rem] text-ink-muted">
+                          {category?.label ?? 'Poste'} · {item.recurrence === 'monthly' ? 'chaque mois' : 'ponctuel'}
+                        </span>
+                      </span>
+                      <span className="tabular shrink-0 text-[0.85rem] font-semibold text-ink">{euro(item.amount)}</span>
+                    </li>
+                  )
+                })}
+              </ul>
             </div>
           </Card>
         )
@@ -259,12 +251,20 @@ export function MonthEntry() {
           const categories = categoriesOf(flow)
           // Chaque catégorie affiche toutes ses lignes ; une catégorie
           // récurrente sans ligne garde une rangée vide, prête à saisir.
-          const rows: { category: (typeof categories)[number]; line?: import('../domain/types').BudgetLine }[] =
-            categories.flatMap((category) => {
-              const catLines = (budget?.lines ?? []).filter((l) => l.categoryId === category.id)
-              if (catLines.length > 0) return catLines.map((line) => ({ category, line }))
-              return category.recurring ? [{ category }] : []
-            })
+          const groups = categories
+            .map((category) => ({
+              category,
+              catLines: (budget?.lines ?? []).filter((l) => l.categoryId === category.id),
+            }))
+            .filter(({ category, catLines }) => catLines.length > 0 || category.recurring)
+          // Le menu déroulant ne propose que les postes absents de la liste :
+          // une ligne de plus sous un poste déjà présent s'ajoute avec son « + ».
+          const disponibles = categories.filter(
+            (category) =>
+              category.id !== 'inc_carryover' &&
+              !category.recurring &&
+              (budget?.lines ?? []).every((l) => l.categoryId !== category.id),
+          )
           const filled = (budget?.lines ?? []).filter(
             (l) => CATEGORY_BY_ID[l.categoryId]?.flow === flow && l.amount > 0,
           ).length
@@ -301,7 +301,11 @@ export function MonthEntry() {
                   >
                     <div className="border-t border-line px-5 py-4">
                       <ul className="flex flex-col gap-1">
-                        {rows.map(({ category, line }) => {
+                        {groups.map(({ category, catLines }) => {
+                          const groupRows: (BudgetLine | undefined)[] = catLines.length > 0 ? catLines : [undefined]
+                          return (
+                            <Fragment key={category.id}>
+                            {groupRows.map((line) => {
                           const rowKey = line ? lineKey(line) : category.id
                           const linked = category.flow === 'saving' ? goalFor(category.id) : null
                           const detailOpen = detailFor === rowKey
@@ -473,9 +477,28 @@ export function MonthEntry() {
                           </li>
                           )
                         })}
+                            {/* Sous un grand titre déjà servi : le « + » qui
+                                ajoute une deuxième, troisième… ligne. */}
+                            {!locked && catLines.length > 0 && category.id !== 'inc_carryover' && (
+                              <li className="pb-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => addExtraLine(month, category.id)}
+                                  aria-label={`Ajouter une ligne sous ${category.label}`}
+                                  title={`Ajouter une ligne sous ${category.label}`}
+                                  className="ml-10 flex items-center gap-1.5 rounded-lg border border-dashed border-line px-2.5 py-1 text-[0.72rem] font-medium text-ink-muted transition hover:border-brand hover:bg-brand-soft hover:text-brand-deep sm:ml-11"
+                                >
+                                  <Icon name="Plus" size={12} />
+                                  Ajouter une ligne
+                                </button>
+                              </li>
+                            )}
+                            </Fragment>
+                          )
+                        })}
                       </ul>
 
-                      {!locked && (
+                      {!locked && disponibles.length > 0 && (
                         <div className="mt-3 border-t border-line pt-3">
                           <label className="flex items-center gap-2 text-[0.78rem] text-ink-muted">
                             <Icon name="Plus" size={14} />
@@ -488,17 +511,11 @@ export function MonthEntry() {
                               }}
                             >
                               <option value="">Choisir…</option>
-                              {categories
-                                .filter((category) => category.id !== 'inc_carryover')
-                                .map((category) => {
-                                  const deja = (budget?.lines ?? []).filter((l) => l.categoryId === category.id).length
-                                  return (
-                                    <option key={category.id} value={category.id}>
-                                      {category.label}
-                                      {deja > 0 ? ` (${deja + 1}ᵉ ligne)` : ''}
-                                    </option>
-                                  )
-                                })}
+                              {disponibles.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.label}
+                                </option>
+                              ))}
                             </select>
                           </label>
                         </div>

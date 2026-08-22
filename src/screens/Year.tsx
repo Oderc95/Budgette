@@ -4,27 +4,32 @@ import clsx from 'clsx'
 import { useApp } from '../store/useApp'
 import { CATEGORIES, CATEGORY_BY_ID, FLOW_META } from '../domain/categories'
 import { summarize } from '../domain/budget'
-import type { PlannedItem } from '../domain/types'
-import { Button, Card, CardHeader } from '../components/ui/primitives'
+import type { MonthKey, PlannedItem } from '../domain/types'
+import { Button, Card } from '../components/ui/primitives'
 import { TONE } from '../components/ui/tone'
 import { Icon } from '../components/Icon'
 import { useCascade } from '../lib/useCascade'
 import { burst } from '../lib/wow'
 import { newId } from '../lib/id'
-import { addMonths, euro, euroSigned, monthKey, monthLabel } from '../lib/format'
+import { euro, euroSigned, monthKey, monthLabel } from '../lib/format'
 
-const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-const MOIS_COURTS = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.']
+const MOIS_PLEINS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+]
 
 /** Les catégories qui se planifient : tout sauf le report automatique. */
 const PLANIFIABLES = CATEGORIES.filter((c) => c.id !== 'inc_carryover')
 
 /**
- * Mon année : la vue d'ensemble, et le calendrier qui prépare les mois.
+ * Mon année : le calendrier géant, un mois par case.
  *
- * Le récap annuel aligne les douze mois ; le calendrier, façon agenda, pose
- * des charges, dettes ou versements à une date — récurrents ou ponctuels —
- * que l'écran de saisie propose ensuite de préremplir d'un geste.
+ * La vue est mensuelle, jamais journalière : douze grandes cases qui montrent,
+ * pour chaque mois, ce qui est prévu — les charges fixes répétées toute
+ * l'année, les dépenses ponctuelles posées sur leur mois, les charges à venir
+ * préparées à l'avance. On clique une case pour y planifier un élément ; la
+ * saisie du mois (« Mon mois ») retrouve ensuite le détail de ce qui était
+ * prévu, montants compris, et le pose d'un geste.
  */
 export function Year() {
   const budgets = useApp((s) => s.budgets)
@@ -32,269 +37,202 @@ export function Year() {
   const removePlanned = useApp((s) => s.removePlanned)
 
   const live = monthKey(new Date())
-  const [month, setMonth] = useState(live)
-  const [creating, setCreating] = useState<number | null>(null)
+  const [annee, setAnnee] = useState(Number(live.slice(0, 4)))
+  const [creating, setCreating] = useState<MonthKey | null>(null)
+  const grille = useCascade<HTMLDivElement>(':scope > *', [annee], { step: 25 })
 
-  const annee = Number(month.slice(0, 4))
-  const moisIndex = Number(month.slice(5, 7)) - 1
-  const moisRef = useCascade<HTMLDivElement>(':scope > *', [], { step: 30 })
-
-  /* --- Le calendrier du mois affiché --- */
-  const premierJour = new Date(annee, moisIndex, 1)
-  const joursDansMois = new Date(annee, moisIndex + 1, 0).getDate()
-  // Lundi = 0 : la grille commence le lundi, comme un agenda européen.
-  const decalage = (premierJour.getDay() + 6) % 7
-
-  const itemsDuJour = (day: number) =>
-    planned.filter(
-      (item) => item.day === day && (item.recurrence === 'monthly' || item.month === month),
-    )
-
-  /* --- Le récap des douze mois de l'année affichée --- */
   const parMois = Array.from({ length: 12 }, (_, index) => {
     const key = `${annee}-${String(index + 1).padStart(2, '0')}`
     const budget = budgets.find((b) => b.month === key)
-    return { key, index, budget, summary: summarize(budget, key) }
+    // Les récurrents d'abord — l'ossature du mois — puis les ponctuels.
+    const items = planned
+      .filter((item) => item.recurrence === 'monthly' || item.month === key)
+      .sort((a, b) =>
+        a.recurrence === b.recurrence
+          ? a.label.localeCompare(b.label, 'fr')
+          : a.recurrence === 'monthly'
+            ? -1
+            : 1,
+      )
+    return { key, index, budget, items, summary: summarize(budget, key) }
   })
   const suivis = parMois.filter((m) => m.budget && m.budget.lines.length > 0)
   const totalEpargne = suivis.reduce((sum, m) => sum + m.summary.totals.saving, 0)
-  const resteMoyen = suivis.length > 0 ? suivis.reduce((sum, m) => sum + m.summary.livingAllowance, 0) / suivis.length : 0
-  const maxEpargne = Math.max(1, ...parMois.map((m) => m.summary.totals.saving))
+  const resteMoyen =
+    suivis.length > 0 ? suivis.reduce((sum, m) => sum + m.summary.livingAllowance, 0) / suivis.length : 0
 
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="eyebrow">Mon année</p>
-          <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Vue d'ensemble {annee}</h1>
-          <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-ink-soft">
-            Les douze mois d'un coup d'œil, et le calendrier qui prépare les suivants.
+          <div className="mt-1 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAnnee(annee - 1)}
+              className="grid size-8 place-items-center rounded-lg border border-line text-ink-soft transition hover:bg-surface-2"
+              aria-label="Année précédente"
+            >
+              <Icon name="ChevronLeft" size={16} />
+            </button>
+            <h1 className="text-center font-display text-[1.55rem] leading-tight text-ink sm:text-[2rem]">
+              Calendrier {annee}
+            </h1>
+            <button
+              type="button"
+              onClick={() => setAnnee(annee + 1)}
+              className="grid size-8 place-items-center rounded-lg border border-line text-ink-soft transition hover:bg-surface-2"
+              aria-label="Année suivante"
+            >
+              <Icon name="ChevronRight" size={16} />
+            </button>
+          </div>
+          <p className="mt-1.5 max-w-2xl text-[0.9rem] leading-relaxed text-ink-soft">
+            Cliquez un mois pour y planifier une charge fixe — répétée chaque mois —, une dépense
+            ponctuelle ou une charge à venir. « Mon mois » proposera de tout préremplir.
           </p>
         </div>
       </header>
 
-      {/* Récap annuel : un bâton d'épargne par mois */}
+      {/* Le récap annuel, en trois chiffres */}
       <Card>
-        <CardHeader title="Récap annuel" hint="L'épargne posée, mois par mois" icon="CalendarRange" tone="amber" />
-        <div className="px-5 pb-5">
-          <div ref={moisRef} className="grid grid-cols-6 gap-2 sm:grid-cols-12">
-            {parMois.map((m) => {
-              const actif = m.index === moisIndex
-              const hauteur = Math.round((m.summary.totals.saving / maxEpargne) * 52)
-              return (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() => setMonth(m.key)}
-                  aria-pressed={actif}
-                  aria-label={`${MOIS_COURTS[m.index]} : ${euro(m.summary.totals.saving)} épargnés`}
-                  className={clsx(
-                    'flex flex-col items-center gap-1.5 rounded-xl border px-1 pb-2 pt-3 transition',
-                    actif ? 'border-brand bg-brand-soft' : 'border-transparent hover:bg-surface-2',
-                  )}
-                >
-                  <span className="flex h-[56px] items-end">
-                    <span
-                      className={clsx(
-                        'w-4 rounded-t-md',
-                        m.summary.totals.saving > 0 ? 'bg-amber' : 'bg-surface-3',
-                      )}
-                      style={{ height: `${Math.max(4, hauteur)}px` }}
-                    />
-                  </span>
-                  <span className={clsx('text-[0.66rem] font-semibold', actif ? 'text-brand-deep' : 'text-ink-muted')}>
-                    {MOIS_COURTS[m.index]}
-                  </span>
-                </button>
-              )
-            })}
+        <div className="grid grid-cols-2 gap-3 px-5 py-4 sm:grid-cols-3">
+          <div className="min-w-0">
+            <p className="eyebrow">Total épargné</p>
+            <p className="tabular mt-1 font-display text-lg text-amber-deep sm:text-xl">{euro(totalEpargne)}</p>
           </div>
-
-          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4">
-            <div>
-              <p className="eyebrow">Total épargné</p>
-              <p className="tabular mt-1 font-display text-xl text-amber-deep">{euro(totalEpargne)}</p>
-            </div>
-            <div>
-              <p className="eyebrow">Reste à vivre moyen</p>
-              <p className="tabular mt-1 font-display text-xl text-ink">{euro(resteMoyen)} / mois</p>
-            </div>
-            <div>
-              <p className="eyebrow">Mois suivis</p>
-              <p className="tabular mt-1 font-display text-xl text-ink">{suivis.length} / 12</p>
-            </div>
+          <div className="min-w-0">
+            <p className="eyebrow">Reste à vivre moyen</p>
+            <p className="tabular mt-1 font-display text-lg text-ink sm:text-xl">{euro(resteMoyen)} / mois</p>
+          </div>
+          <div className="min-w-0">
+            <p className="eyebrow">Mois suivis</p>
+            <p className="tabular mt-1 font-display text-lg text-ink sm:text-xl">{suivis.length} / 12</p>
           </div>
         </div>
       </Card>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {/* Calendrier du mois */}
-        <Card className="min-w-0">
-          <CardHeader
-            title={monthLabel(month)}
-            hint="Cliquez un jour pour planifier une charge, une dette ou un versement"
-            icon="CalendarDays"
-            tone="indigo"
-            action={
-              <span className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setMonth(addMonths(month, -1))}
-                  aria-label="Mois précédent"
-                  className="grid size-8 place-items-center rounded-lg border border-line text-ink-soft transition hover:bg-surface-2"
+      {/* Le calendrier géant : une grande case par mois, cliquable */}
+      <div ref={grille} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        {parMois.map((m) => {
+          const courant = m.key === live
+          const suivi = !!m.budget && m.budget.lines.length > 0
+          const totalPrevu = m.items.reduce((sum, item) => sum + item.amount, 0)
+          return (
+            <div
+              key={m.key}
+              role="button"
+              tabIndex={0}
+              onClick={() => setCreating(m.key)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  setCreating(m.key)
+                }
+              }}
+              aria-label={`Planifier un élément en ${MOIS_PLEINS[m.index]} ${annee}`}
+              className={clsx(
+                'card group flex min-h-[12rem] cursor-pointer flex-col p-3.5 text-left transition hover:-translate-y-0.5',
+                courant && 'ring-2 ring-brand/35',
+              )}
+            >
+              <header className="flex items-center gap-2">
+                <span
+                  className={clsx(
+                    'font-display text-[1.05rem] leading-none',
+                    courant ? 'text-brand-deep' : 'text-ink',
+                  )}
                 >
-                  <Icon name="ChevronLeft" size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMonth(addMonths(month, 1))}
-                  aria-label="Mois suivant"
-                  className="grid size-8 place-items-center rounded-lg border border-line text-ink-soft transition hover:bg-surface-2"
+                  {MOIS_PLEINS[m.index]}
+                </span>
+                {courant && (
+                  <span className="chip bg-brand-soft px-1.5 py-0 text-[0.62rem] text-brand-deep">en cours</span>
+                )}
+                <span
+                  className="ml-auto grid size-7 shrink-0 place-items-center rounded-lg border border-line text-ink-muted transition group-hover:border-brand group-hover:bg-brand-soft group-hover:text-brand-deep"
+                  aria-hidden
                 >
-                  <Icon name="ChevronRight" size={15} />
-                </button>
-              </span>
-            }
-          />
-          <div className="px-3 pb-4 sm:px-5">
-            <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line">
-              {JOURS.map((jour) => (
-                <div key={jour} className="bg-surface-2 px-1 py-1.5 text-center text-[0.66rem] font-bold uppercase tracking-wider text-ink-muted">
-                  {jour}
-                </div>
-              ))}
-              {Array.from({ length: decalage }).map((_, i) => (
-                <div key={`v-${i}`} className="min-h-16 bg-surface opacity-50 sm:min-h-20" />
-              ))}
-              {Array.from({ length: joursDansMois }, (_, i) => i + 1).map((day) => {
-                const items = itemsDuJour(day)
-                const aujourdHui = month === live && day === new Date().getDate()
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => setCreating(day)}
-                    aria-label={`Planifier le ${day} ${monthLabel(month)}`}
-                    className={clsx(
-                      'group flex min-h-16 flex-col items-stretch gap-0.5 bg-surface p-1 text-left transition hover:bg-surface-2 sm:min-h-20 sm:p-1.5',
-                      aujourdHui && 'bg-brand-soft/50',
-                    )}
-                  >
-                    <span
-                      className={clsx(
-                        'tabular self-start rounded-md px-1 text-[0.7rem] leading-5',
-                        aujourdHui ? 'bg-brand font-bold text-on-accent' : 'text-ink-muted',
-                      )}
-                    >
-                      {day}
-                    </span>
-                    {items.slice(0, 2).map((item) => {
-                      const tone = TONE[FLOW_META[CATEGORY_BY_ID[item.categoryId]?.flow ?? 'fixed'].tone]
-                      return (
-                        <span
-                          key={item.id}
-                          className={clsx('truncate rounded px-1 py-px text-[0.62rem] font-medium', tone.bg, tone.deep)}
-                          title={`${item.label} — ${euro(item.amount)}`}
-                        >
-                          {item.label}
-                        </span>
-                      )
-                    })}
-                    {items.length > 2 && (
-                      <span className="px-1 text-[0.6rem] text-ink-muted">+{items.length - 2}</span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </Card>
+                  <Icon name="Plus" size={14} />
+                </span>
+              </header>
 
-        {/* Les éléments planifiés du mois */}
-        <Card className="min-w-0">
-          <CardHeader
-            title="Planifié ce mois-ci"
-            hint="Préremplissable depuis « Mon mois »"
-            icon="CalendarCheck"
-            tone="mint"
-          />
-          <ul className="flex flex-col gap-2 px-5 pb-5">
-            {planned
-              .filter((item) => item.recurrence === 'monthly' || item.month === month)
-              .sort((a, b) => a.day - b.day)
-              .map((item) => {
-                const category = CATEGORY_BY_ID[item.categoryId]
-                const tone = TONE[FLOW_META[category?.flow ?? 'fixed'].tone]
-                return (
-                  <li key={item.id} className="flex items-center gap-3 rounded-xl border border-line bg-surface-2 px-3 py-2">
-                    <span className={clsx('grid size-8 shrink-0 place-items-center rounded-lg', tone.bg, tone.deep)}>
-                      <Icon name={category?.icon ?? 'CalendarDays'} size={14} />
+              <ul className="mt-2.5 flex flex-1 flex-col gap-1">
+                {m.items.map((item) => {
+                  const tone = TONE[FLOW_META[CATEGORY_BY_ID[item.categoryId]?.flow ?? 'fixed'].tone]
+                  return (
+                    <li key={item.id} className={clsx('flex items-center gap-1.5 rounded-lg px-2 py-1', tone.bg)}>
+                      {item.recurrence === 'monthly' && (
+                        <Icon name="Repeat" size={10} className={clsx('shrink-0', tone.deep)} aria-label="Chaque mois" />
+                      )}
+                      <span className={clsx('min-w-0 flex-1 truncate text-[0.72rem] font-medium', tone.deep)}>
+                        {item.label}
+                      </span>
+                      <span className={clsx('tabular shrink-0 text-[0.72rem] font-semibold', tone.deep)}>
+                        {euro(item.amount)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          removePlanned(item.id)
+                        }}
+                        aria-label={`Supprimer ${item.label}`}
+                        title={item.recurrence === 'monthly' ? 'Supprimer — tous les mois' : 'Supprimer'}
+                        className="grid size-5 shrink-0 place-items-center rounded text-ink-muted transition hover:text-berry-deep"
+                      >
+                        <Icon name="X" size={11} />
+                      </button>
+                    </li>
+                  )
+                })}
+                {m.items.length === 0 && (
+                  <li className="rounded-lg border border-dashed border-line px-2 py-1.5 text-[0.7rem] text-ink-muted">
+                    Rien de prévu — cliquez pour planifier
+                  </li>
+                )}
+              </ul>
+
+              <footer className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 border-t border-line pt-2 text-[0.68rem] text-ink-muted">
+                {totalPrevu > 0 && (
+                  <span>
+                    Prévu <span className="tabular font-semibold text-ink">{euro(totalPrevu)}</span>
+                  </span>
+                )}
+                {suivi && (
+                  <>
+                    <span>
+                      Épargne{' '}
+                      <span className="tabular font-semibold text-amber-deep">{euro(m.summary.totals.saving)}</span>
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[0.85rem] font-medium text-ink">{item.label}</span>
-                      <span className="block text-[0.7rem] text-ink-muted">
-                        Le {item.day} · {item.recurrence === 'monthly' ? 'chaque mois' : monthLabel(item.month ?? month)}
+                    <span>
+                      Fin{' '}
+                      <span
+                        className={clsx(
+                          'tabular font-semibold',
+                          m.summary.endOfMonth >= 0 ? 'text-mint-deep' : 'text-berry-deep',
+                        )}
+                      >
+                        {euroSigned(m.summary.endOfMonth)}
                       </span>
                     </span>
-                    <span className="tabular shrink-0 text-[0.85rem] font-semibold text-ink">{euro(item.amount)}</span>
-                    <button
-                      type="button"
-                      onClick={() => removePlanned(item.id)}
-                      aria-label={`Supprimer ${item.label}`}
-                      className="grid size-7 shrink-0 place-items-center rounded-lg text-ink-muted transition hover:bg-berry-soft hover:text-berry-deep"
-                    >
-                      <Icon name="X" size={13} />
-                    </button>
-                  </li>
-                )
-              })}
-            {planned.filter((item) => item.recurrence === 'monthly' || item.month === month).length === 0 && (
-              <li className="rounded-xl bg-surface-2 px-4 py-3 text-[0.85rem] text-ink-muted">
-                Rien de planifié : cliquez un jour du calendrier.
-              </li>
-            )}
-          </ul>
-
-          {/* Le mois sélectionné, en chiffres */}
-          <div className="border-t border-line px-5 py-4">
-            <p className="eyebrow mb-2">Récap {monthLabel(month)}</p>
-            <dl className="flex flex-col gap-1.5">
-              {(() => {
-                const s = parMois[moisIndex]?.summary
-                if (!s || s.totals.income === 0)
-                  return <dd className="text-[0.82rem] text-ink-muted">Pas encore de saisie pour ce mois.</dd>
-                return (
-                  <>
-                    {[
-                      { label: 'Revenus', value: euro(s.totals.income), cls: 'text-mint-deep' },
-                      { label: 'Épargne', value: euro(s.totals.saving), cls: 'text-amber-deep' },
-                      { label: 'Reste à vivre', value: euro(s.livingAllowance), cls: 'text-ink' },
-                      { label: 'Fin de mois', value: euroSigned(s.endOfMonth), cls: s.endOfMonth >= 0 ? 'text-mint-deep' : 'text-berry-deep' },
-                    ].map((ligne) => (
-                      <div key={ligne.label} className="flex items-baseline justify-between text-[0.85rem]">
-                        <dt className="text-ink-soft">{ligne.label}</dt>
-                        <dd className={clsx('tabular font-semibold', ligne.cls)}>{ligne.value}</dd>
-                      </div>
-                    ))}
                   </>
-                )
-              })()}
-            </dl>
-          </div>
-        </Card>
+                )}
+                {totalPrevu === 0 && !suivi && <span>Mois libre</span>}
+              </footer>
+            </div>
+          )
+        })}
       </div>
 
       <AnimatePresence>
-        {creating !== null && (
-          <PlanDialog day={creating} month={month} onClose={() => setCreating(null)} />
-        )}
+        {creating !== null && <PlanDialog month={creating} onClose={() => setCreating(null)} />}
       </AnimatePresence>
     </div>
   )
 }
 
-/** Planifier un élément : intitulé, montant, catégorie, récurrence. */
-function PlanDialog({ day, month, onClose }: { day: number; month: string; onClose: () => void }) {
+/** Planifier un élément sur un mois : intitulé, montant, catégorie, portée. */
+function PlanDialog({ month, onClose }: { month: MonthKey; onClose: () => void }) {
   const addPlanned = useApp((s) => s.addPlanned)
   const pushToast = useApp((s) => s.pushToast)
   const [label, setLabel] = useState('')
@@ -320,11 +258,10 @@ function PlanDialog({ day, month, onClose }: { day: number; month: string; onClo
         aria-modal="true"
         aria-label="Planifier un élément"
       >
-        <h2 className="font-display text-2xl text-ink">
-          Le {day} {monthLabel(month)}
-        </h2>
+        <h2 className="font-display text-2xl capitalize text-ink">{monthLabel(month)}</h2>
         <p className="mt-1 text-[0.85rem] text-ink-muted">
-          Cet élément préremplira la saisie du ou des mois concernés.
+          Une charge fixe se répète chaque mois de l'année ; une dépense ponctuelle ne touche que ce
+          mois. La saisie du mois proposera de tout préremplir.
         </p>
 
         <label className="mt-4 block">
@@ -353,14 +290,14 @@ function PlanDialog({ day, month, onClose }: { day: number; month: string; onClo
             </span>
           </label>
           <label className="block">
-            <span className="text-[0.85rem] font-semibold text-ink">Récurrence</span>
+            <span className="text-[0.85rem] font-semibold text-ink">Portée</span>
             <select
               value={recurrence}
               onChange={(event) => setRecurrence(event.target.value as PlannedItem['recurrence'])}
               className="mt-1.5 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-[0.9rem] text-ink outline-none focus:border-brand"
             >
               <option value="monthly">Chaque mois</option>
-              <option value="once">Une seule fois</option>
+              <option value="once">Ce mois uniquement</option>
             </select>
           </label>
         </div>
@@ -394,11 +331,19 @@ function PlanDialog({ day, month, onClose }: { day: number; month: string; onClo
                 label: label.trim(),
                 categoryId,
                 amount: Math.round(amount),
-                day,
+                day: 1,
                 recurrence,
                 month: recurrence === 'once' ? month : undefined,
               })
-              pushToast({ title: 'Planifié !', detail: `${label.trim()} · le ${day}`, tone: 'indigo', icon: 'CalendarCheck' })
+              pushToast({
+                title: 'Planifié !',
+                detail:
+                  recurrence === 'monthly'
+                    ? `${label.trim()} · chaque mois`
+                    : `${label.trim()} · ${monthLabel(month)}`,
+                tone: 'indigo',
+                icon: 'CalendarCheck',
+              })
               onClose()
             }}
           >

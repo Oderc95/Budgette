@@ -5,7 +5,7 @@ import {
   FileText, Flag, Flame, Flower2, Footprints, Gem, Gift, GraduationCap, Hammer, HeartPulse, Hourglass,
   House, HousePlus, IceCreamCone, Info, Landmark, LayoutDashboard, Leaf, ListChecks, Lock, LogOut,
   Luggage, Menu, Moon, Monitor, Mountain, PackageOpen, Palmtree, PenLine, PiggyBank, Plane, Plus,
-  RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
+  Repeat, RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
   Snowflake, Sparkles, Split, Sprout, Sun, Target, Telescope, Terminal, Ticket, TramFront, TrendingDown,
   Search, Tag, TrendingUp, Trophy, Umbrella, Undo2, UserPlus, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
 } from 'lucide-react'
@@ -24,7 +24,7 @@ const REGISTRY: Record<string, ComponentType<{ size?: number; strokeWidth?: numb
   FileText, Flag, Flame, Flower2, Footprints, Gem, Gift, GraduationCap, Hammer, HeartPulse, Hourglass,
   House, HousePlus, IceCreamCone, Info, Landmark, LayoutDashboard, Leaf, ListChecks, Lock, LogOut,
   Luggage, Menu, Moon, Monitor, Mountain, PackageOpen, Palmtree, PenLine, PiggyBank, Plane, Plus,
-  RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
+  Repeat, RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
   Snowflake, Sparkles, Split, Sprout, Sun, Target, Telescope, Terminal, Ticket, TramFront, TrendingDown,
   Search, Tag, TrendingUp, Trophy, Umbrella, Undo2, UserPlus, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
 }
