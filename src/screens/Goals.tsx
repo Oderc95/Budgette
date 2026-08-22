@@ -58,7 +58,7 @@ export function Goals() {
         <div className="grid gap-4 lg:grid-cols-2">
           {goals.map((goal) => {
             const pocket = goal.pocketId ? pockets.find((p) => p.id === goal.pocketId) : undefined
-            const saved = pocket ? pocketBalance(pocket) : goal.savedAmount
+            const saved = pocket ? pocketBalance(pocket, budgets) : 0
             const projection = projectGoal(goal.targetAmount, saved, goal.deadline, month, summary.livingAllowance)
             const ratio = Math.min(1, saved / goal.targetAmount)
             const catalogEntry = GOAL_CATALOG.find((g) => g.kind === goal.kind)
@@ -144,7 +144,7 @@ export function Goals() {
         />
         <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4">
           {pockets.map((pocket) => {
-            const balance = pocketBalance(pocket)
+            const balance = pocketBalance(pocket, budgets)
             const ratio = pocket.target ? Math.min(1, balance / pocket.target) : 0
             return (
               <div key={pocket.id} className={clsx('rounded-2xl border p-4', TONE[pocket.tone].bg, TONE[pocket.tone].border)}>
@@ -404,7 +404,6 @@ function GoalDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (goa
                 kind,
                 label: label.trim() || entry.label,
                 targetAmount: amount,
-                savedAmount: 0,
                 deadline,
                 createdAt: new Date().toISOString(),
               })

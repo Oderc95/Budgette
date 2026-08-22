@@ -1,8 +1,11 @@
 import type {
+  Friend,
   Goal,
+  Group,
   MonthBudget,
   Profile,
   SavingsPocket,
+  Tag,
   UnlockedBadge,
 } from '../domain/types'
 
@@ -160,6 +163,31 @@ const MONTHS: { month: string; closed: boolean; mood: 1 | 2 | 3 | 4 | 5; rows: R
   },
 ]
 
+/** Étiquettes de Camille : des transversales qui croisent les catégories. */
+export const MOCK_TAGS: Tag[] = [
+  { id: 'tag_sante', label: 'Santé', tone: 'mint' },
+  { id: 'tag_bretagne', label: 'Bretagne 2026', tone: 'indigo' },
+  { id: 'tag_teletravail', label: 'Télétravail', tone: 'amber' },
+]
+
+/**
+ * Retouches de lignes : étiquettes et dépenses ponctuelles. Les montants
+ * restent dans MONTHS ; ici on ne pose que ce qui ne se somme pas.
+ */
+const LINE_DETAILS: Record<string, Record<string, { tagIds?: string[]; oneOff?: boolean; note?: string }>> = {
+  '2026-05': {
+    // Les soins dentaires : ponctuels par nature, et étiquetés Santé.
+    fix_other: { oneOff: true, tagIds: ['tag_sante'], note: 'Couronne dentaire' },
+  },
+  '2026-07': {
+    dis_travel: { oneOff: true, tagIds: ['tag_bretagne'], note: 'Location + train' },
+    dis_restaurant: { tagIds: ['tag_bretagne'] },
+  },
+  '2026-08': {
+    fix_internet: { tagIds: ['tag_teletravail'] },
+  },
+}
+
 export const MOCK_BUDGETS: MonthBudget[] = MONTHS.map(({ month, closed, mood, rows }) => ({
   month,
   closed,
@@ -167,13 +195,13 @@ export const MOCK_BUDGETS: MonthBudget[] = MONTHS.map(({ month, closed, mood, ro
   mood,
   lines: Object.entries(rows)
     .filter(([, amount]) => amount > 0)
-    .map(([categoryId, amount]) => ({ categoryId, amount })),
+    .map(([categoryId, amount]) => ({ categoryId, amount, ...LINE_DETAILS[month]?.[categoryId] })),
 }))
 
 /**
- * Poches d'épargne. Les versements reprennent, mois par mois, les lignes
- * `sav_*` saisies plus haut : un écart entre les deux ferait diverger le solde
- * affiché sur l'écran Objectifs de celui calculé sur l'écran Accueil.
+ * Poches d'épargne. Leur solde se calcule depuis les lignes `sav_*` des mois :
+ * ce que Camille met de côté dans « Mon mois » EST le versement, il n'existe
+ * aucun registre séparé qui pourrait diverger.
  */
 export const MOCK_POCKETS: SavingsPocket[] = [
   {
@@ -183,9 +211,6 @@ export const MOCK_POCKETS: SavingsPocket[] = [
     tone: 'mint',
     target: 3800,
     openingBalance: 0,
-    contributions: {
-      '2026-02': 40, '2026-03': 90, '2026-04': 150, '2026-06': 180, '2026-07': 100, '2026-08': 200,
-    },
   },
   {
     id: 'pocket_home',
@@ -194,9 +219,6 @@ export const MOCK_POCKETS: SavingsPocket[] = [
     tone: 'indigo',
     target: 12000,
     openingBalance: 0,
-    contributions: {
-      '2026-04': 100, '2026-06': 150, '2026-07': 100, '2026-08': 160,
-    },
   },
   {
     // Poche ouverte mais jamais alimentée : l'interface doit savoir le montrer.
@@ -206,7 +228,6 @@ export const MOCK_POCKETS: SavingsPocket[] = [
     tone: 'orchid',
     target: 900,
     openingBalance: 0,
-    contributions: {},
   },
 ]
 
@@ -216,7 +237,6 @@ export const MOCK_GOALS: Goal[] = [
     kind: 'emergency',
     label: 'Trois mois de charges devant moi',
     targetAmount: 3800,
-    savedAmount: 760,
     deadline: '2027-09',
     pocketId: 'pocket_emergency',
     createdAt: '2026-02-03T19:20:00.000Z',
@@ -226,7 +246,6 @@ export const MOCK_GOALS: Goal[] = [
     kind: 'home',
     label: "Apport pour un premier appartement",
     targetAmount: 12000,
-    savedAmount: 510,
     deadline: '2029-06',
     pocketId: 'pocket_home',
     createdAt: '2026-04-06T21:05:00.000Z',
@@ -235,6 +254,7 @@ export const MOCK_GOALS: Goal[] = [
 
 export const MOCK_PROFILE: Profile = {
   id: 'usr_demo',
+  pseudo: 'camille.r',
   displayName: 'Camille',
   email: 'camille@budgette.app',
   role: 'admin',
@@ -290,6 +310,64 @@ export const MOCK_CHALLENGE_PROGRESS = [
   { challengeId: 'y_save_15', period: '2026', value: 8.3, completed: false },
   { challengeId: 'y_debt_free', period: '2026', value: 1, completed: true, completedAt: '2026-07-31T20:00:00.000Z' },
   { challengeId: 'y_goal', period: '2026', value: 0, completed: false },
+]
+
+/* ------------------------------- Social -------------------------------- */
+
+/**
+ * Le réseau de Camille. Les niveaux et paliers sont visibles entre amis ;
+ * jamais les montants — le jardin se partage, pas le relevé.
+ */
+export const MOCK_FRIENDS: Friend[] = [
+  { id: 'usr_2', pseudo: 'jonas.brk', displayName: 'Jonas', level: 19, stageIndex: 4, status: 'ami' },
+  { id: 'usr_3', pseudo: 'farida-v', displayName: 'Farida', level: 7, stageIndex: 2, status: 'ami' },
+  { id: 'usr_4', pseudo: 'elio.mzt', displayName: 'Elio', level: 24, stageIndex: 5, status: 'ami' },
+  { id: 'usr_6', pseudo: 'anouk_dl', displayName: 'Anouk', level: 5, stageIndex: 1, status: 'demande_recue' },
+]
+
+/** Annuaire de recherche : les comptes qui ne sont pas encore des amis. */
+export const MOCK_DIRECTORY: Friend[] = [
+  { id: 'usr_5', pseudo: 'wassim.k', displayName: 'Wassim', level: 2, stageIndex: 0, status: 'demande_envoyee' },
+  { id: 'usr_7', pseudo: 'lea.plnt', displayName: 'Léa', level: 11, stageIndex: 3, status: 'ami' },
+  { id: 'usr_8', pseudo: 'marco.bgt', displayName: 'Marco', level: 31, stageIndex: 6, status: 'ami' },
+  { id: 'usr_9', pseudo: 'sonia.eco', displayName: 'Sonia', level: 15, stageIndex: 4, status: 'ami' },
+].map((f) => ({ ...f, status: f.id === 'usr_5' ? ('demande_envoyee' as const) : ('ami' as const) }))
+
+export const MOCK_GROUPS: Group[] = [
+  {
+    // Camille administre celui-ci : elle peut configurer l'objectif.
+    id: 'grp_rome',
+    name: 'Cap sur Rome',
+    icon: 'Plane',
+    tone: 'indigo',
+    goalKind: 'travel',
+    goalLabel: 'Quatre jours à Rome à trois',
+    targetAmount: 1800,
+    deadline: '2027-05',
+    createdAt: '2026-06-14T19:30:00.000Z',
+    members: [
+      { id: 'usr_demo', pseudo: 'camille.r', displayName: 'Camille', role: 'admin', contributions: { '2026-06': 40, '2026-07': 40, '2026-08': 50 } },
+      { id: 'usr_2', pseudo: 'jonas.brk', displayName: 'Jonas', role: 'membre', contributions: { '2026-06': 60, '2026-07': 60, '2026-08': 60 } },
+      { id: 'usr_3', pseudo: 'farida-v', displayName: 'Farida', role: 'membre', contributions: { '2026-07': 35, '2026-08': 35 } },
+    ],
+  },
+  {
+    // Ici Camille est simple membre : Elio décide, elle contribue.
+    id: 'grp_noel',
+    name: 'Noël des Roussel',
+    icon: 'Gift',
+    tone: 'berry',
+    goalKind: 'celebration',
+    goalLabel: 'La cagnotte cadeaux de la famille',
+    targetAmount: 400,
+    deadline: '2026-12',
+    createdAt: '2026-03-02T10:00:00.000Z',
+    members: [
+      { id: 'usr_4', pseudo: 'elio.mzt', displayName: 'Elio', role: 'admin', contributions: { '2026-04': 30, '2026-05': 30, '2026-06': 30, '2026-07': 30, '2026-08': 30 } },
+      { id: 'usr_demo', pseudo: 'camille.r', displayName: 'Camille', role: 'membre', contributions: { '2026-06': 20, '2026-07': 20, '2026-08': 20 } },
+      { id: 'usr_6', pseudo: 'anouk_dl', displayName: 'Anouk', role: 'membre', contributions: { '2026-07': 15 } },
+    ],
+  },
 ]
 
 /** Données de l'écran d'administration (Phase 1 : entièrement fictives). */

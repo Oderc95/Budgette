@@ -25,12 +25,26 @@ export interface Category {
   recurring?: boolean
 }
 
+/** Étiquette libre, à coller sur des lignes pour croiser les catégories. */
+export interface Tag {
+  id: string
+  label: string
+  tone: Tone
+}
+
 /** Une ligne de saisie : un montant pour une catégorie, sur un mois donné. */
 export interface BudgetLine {
   categoryId: string
   amount: number
   /** Précision libre saisie par l'utilisateur (« Deliveroo x4 »). */
   note?: string
+  /** Étiquettes collées sur la ligne. */
+  tagIds?: string[]
+  /**
+   * Dépense ponctuelle : elle ne sera pas attendue le mois suivant quand ce
+   * mois sert de référence.
+   */
+  oneOff?: boolean
 }
 
 /** Identifiant de mois au format `AAAA-MM`. */
@@ -55,10 +69,11 @@ export interface SavingsPocket {
   tone: Tone
   /** Montant visé ; `null` pour une poche sans plafond (retraite). */
   target: number | null
-  /** Solde de départ, avant le premier mois suivi dans l'app. */
+  /**
+   * Solde de départ, avant le premier mois suivi dans l'app. Les versements
+   * suivants sont les lignes d'épargne des mois : une seule source de vérité.
+   */
   openingBalance: number
-  /** Versements par mois, en euros. */
-  contributions: Record<MonthKey, number>
 }
 
 /** Familles d'objectifs proposées à l'onboarding. */
@@ -71,13 +86,18 @@ export type GoalKind =
   | 'purchase'
   | 'retirement'
   | 'freedom'
+  | 'car'
+  | 'wedding'
+  | 'baby'
+  | 'moving'
+  | 'celebration'
+  | 'health'
 
 export interface Goal {
   id: string
   kind: GoalKind
   label: string
   targetAmount: number
-  savedAmount: number
   /** Échéance visée au format `AAAA-MM`. */
   deadline: MonthKey
   /** Poche d'épargne alimentant l'objectif, si rattachée. */
@@ -178,6 +198,8 @@ export interface Streak {
 export type UserRole = 'user' | 'admin'
 
 export interface Profile {
+  /** Pseudo unique, la poignée par laquelle les amis vous trouvent. */
+  pseudo: string
   id: string
   displayName: string
   email: string
@@ -194,4 +216,40 @@ export interface Profile {
     privacyAcceptedAt?: string
     analyticsOptIn: boolean
   }
+}
+
+/* ------------------------------- Social -------------------------------- */
+
+/** Un membre du réseau, vu de l'extérieur : jamais ses montants. */
+export interface Friend {
+  id: string
+  pseudo: string
+  displayName: string
+  level: number
+  /** Palier de jardin, pour afficher sa plante. */
+  stageIndex: number
+  status: 'ami' | 'demande_envoyee' | 'demande_recue'
+}
+
+export interface GroupMember {
+  id: string
+  pseudo: string
+  displayName: string
+  role: 'admin' | 'membre'
+  /** Versements déclarés au pot commun, par mois. */
+  contributions: Record<MonthKey, number>
+}
+
+/** Un groupe : des membres autour d'un objectif commun. */
+export interface Group {
+  id: string
+  name: string
+  icon: string
+  tone: Tone
+  goalKind: GoalKind
+  goalLabel: string
+  targetAmount: number
+  deadline: MonthKey
+  createdAt: string
+  members: GroupMember[]
 }

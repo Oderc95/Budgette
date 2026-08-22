@@ -173,12 +173,33 @@ export function averageFlow(budgets: MonthBudget[], flow: Flow, months = 3): num
   return sum / closed.length
 }
 
-/** Solde d'une poche d'épargne, versements cumulés inclus. */
-export function pocketBalance(pocket: SavingsPocket): number {
-  return (
-    pocket.openingBalance +
-    Object.values(pocket.contributions).reduce((sum, amount) => sum + amount, 0)
+/** Catégorie d'épargne qui alimente une poche : `pocket_x` ↔ `sav_x`. */
+export function pocketCategoryId(pocketId: string): string {
+  return pocketId.replace(/^pocket_/, 'sav_')
+}
+
+/**
+ * Solde d'une poche : le solde de départ plus toutes les lignes d'épargne
+ * saisies dans les mois. Il n'existe pas de registre séparé de versements —
+ * ce que vous mettez de côté dans « Mon mois » EST le versement.
+ */
+export function pocketBalance(pocket: SavingsPocket, budgets: MonthBudget[]): number {
+  const categoryId = pocketCategoryId(pocket.id)
+  return budgets.reduce(
+    (sum, budget) =>
+      sum +
+      budget.lines
+        .filter((line) => line.categoryId === categoryId)
+        .reduce((s, line) => s + line.amount, 0),
+    pocket.openingBalance,
   )
+}
+
+/** Versement d'un mois donné dans une poche. */
+export function pocketMonthContribution(pocket: SavingsPocket, budget: MonthBudget | undefined): number {
+  if (!budget) return 0
+  const categoryId = pocketCategoryId(pocket.id)
+  return budget.lines.filter((l) => l.categoryId === categoryId).reduce((s, l) => s + l.amount, 0)
 }
 
 export interface GoalProjection {

@@ -61,7 +61,6 @@ export function Onboarding() {
         kind,
         label: catalogEntry.label,
         targetAmount: Math.round(amount),
-        savedAmount: 0,
         deadline,
         createdAt: new Date().toISOString(),
       },

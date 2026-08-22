@@ -15,14 +15,18 @@
 :root {
   color-scheme: light;
 
-  --c-bg: #fff6ee;
-  --c-bg-rgb: 255 246 238;
-  --c-bg-deep: #fbe7d8;
-  --c-surface: #ffffff;
-  --c-surface-2: #fff4ea;
-  --c-surface-3: #fbe5d4;
-  --c-border: #f4ddca;
-  --c-border-strong: #e7c6ab;
+  /*
+   * Fond clair volontairement soutenu : un crème sable qui laisse les cartes
+   * presque blanches se détacher, au lieu d'un blanc cassé qui éblouit.
+   */
+  --c-bg: #f6e9d8;
+  --c-bg-rgb: 246 233 216;
+  --c-bg-deep: #eeddc5;
+  --c-surface: #fffdf9;
+  --c-surface-2: #f8efe1;
+  --c-surface-3: #efdfc8;
+  --c-border: #e6d2b6;
+  --c-border-strong: #d3b48d;
 
   --c-text: #33232c;
   --c-text-soft: #6b5461;

@@ -74,6 +74,54 @@ export const GOAL_CATALOG: {
     suggestedAmount: 100000,
     suggestedMonths: 180,
   },
+  {
+    kind: 'car',
+    label: 'Véhicule',
+    tagline: 'Acheter ou remplacer sans crédit qui traîne.',
+    icon: 'Car',
+    suggestedAmount: 8000,
+    suggestedMonths: 24,
+  },
+  {
+    kind: 'wedding',
+    label: 'Mariage / union',
+    tagline: 'Un grand jour financé à l’avance, vécu l’esprit libre.',
+    icon: 'Gem',
+    suggestedAmount: 12000,
+    suggestedMonths: 18,
+  },
+  {
+    kind: 'baby',
+    label: 'Arrivée d’un enfant',
+    tagline: 'Équipement, garde, imprévus : préparer le nid.',
+    icon: 'Baby',
+    suggestedAmount: 3000,
+    suggestedMonths: 9,
+  },
+  {
+    kind: 'moving',
+    label: 'Déménagement',
+    tagline: 'Dépôt de garantie, camion, ameublement du nouveau lieu.',
+    icon: 'PackageOpen',
+    suggestedAmount: 2500,
+    suggestedMonths: 6,
+  },
+  {
+    kind: 'celebration',
+    label: 'Fêtes & cadeaux',
+    tagline: 'Décembre sans découvert : la cagnotte des occasions.',
+    icon: 'Gift',
+    suggestedAmount: 600,
+    suggestedMonths: 10,
+  },
+  {
+    kind: 'health',
+    label: 'Santé & bien-être',
+    tagline: 'Soins peu remboursés, lunettes, dentaire : anticiper.',
+    icon: 'HeartPulse',
+    suggestedAmount: 1200,
+    suggestedMonths: 12,
+  },
 ]
 
 /**
@@ -174,6 +222,84 @@ export const STRATEGIES: Record<GoalKind, Strategy> = {
       'Réévaluer la cible une fois par an',
     ],
     featuredChallenges: ['y_save_15', 'm_save_10', 'y_12_closed'],
+  },
+  car: {
+    id: 'garage',
+    name: 'Le Garage',
+    rationale:
+      "Un véhicule payé comptant coûte le prix affiché ; à crédit, il coûte le prix plus les intérêts, pour un bien qui perd de la valeur. On épargne d'abord.",
+    rule: { needs: 50, wants: 20, future: 30 },
+    priorities: [
+      'Chiffrer le véhicule cible, décote comprise',
+      'Verser la mensualité du crédit évité… sur la poche',
+      "Provisionner l'entretien dès l'achat",
+    ],
+    featuredChallenges: ['m_save_10', 'd_cart_pause', 'w_sell'],
+  },
+  wedding: {
+    id: 'ceremonie',
+    name: 'La Cérémonie',
+    rationale:
+      "Un mariage se chiffre poste par poste : lieu, repas, tenues, chacun sa ligne. Ce qui est financé à l'avance ne se rediscute pas la veille.",
+    rule: { needs: 50, wants: 15, future: 35 },
+    priorities: [
+      'Poser le budget total et le découper par poste',
+      'Ouvrir une poche dédiée, à deux si possible',
+      'Décider tôt ce qui compte vraiment — et couper le reste',
+    ],
+    featuredChallenges: ['m_save_10', 'm_under_budget', 'w_review'],
+  },
+  baby: {
+    id: 'nid',
+    name: 'Le Nid',
+    rationale:
+      "L'arrivée d'un enfant change le budget durablement : l'équipement est ponctuel, la garde est récurrente. On prépare les deux séparément.",
+    rule: { needs: 55, wants: 15, future: 30 },
+    priorities: [
+      "Constituer la cagnotte d'équipement avant l'arrivée",
+      'Simuler le budget mensuel avec les frais de garde',
+      "Renforcer le fonds d'urgence en parallèle",
+    ],
+    featuredChallenges: ['m_save_10', 'w_grocery_budget', 'm_no_overdraft'],
+  },
+  moving: {
+    id: 'cartons',
+    name: 'Les Cartons',
+    rationale:
+      "Un déménagement concentre les dépenses sur deux mois : dépôt de garantie, transport, premiers équipements. Provisionner évite d'emménager à découvert.",
+    rule: { needs: 50, wants: 20, future: 30 },
+    priorities: [
+      'Lister les frais du premier mois dans le nouveau lieu',
+      'Étaler la provision sur les mois qui restent',
+      'Revendre ce qui ne suivra pas',
+    ],
+    featuredChallenges: ['w_sell', 'm_under_budget', 'd_cart_pause'],
+  },
+  celebration: {
+    id: 'cagnotte',
+    name: 'La Cagnotte',
+    rationale:
+      'Les fêtes tombent chaque année à la même date : ce ne sont pas des imprévus. Douze petits versements remplacent un découvert de janvier.',
+    rule: { needs: 50, wants: 25, future: 25 },
+    priorities: [
+      "Fixer l'enveloppe cadeaux de l'année, par personne",
+      'Verser un douzième chaque mois',
+      'Acheter hors saison quand l’occasion se présente',
+    ],
+    featuredChallenges: ['d_round_up', 'm_save_10', 'd_cart_pause'],
+  },
+  health: {
+    id: 'trousse',
+    name: 'La Trousse',
+    rationale:
+      "Lunettes, dentaire, consultations peu remboursées : la santé se budgète aussi. Une provision dédiée évite d'arbitrer sa santé contre sa trésorerie.",
+    rule: { needs: 55, wants: 15, future: 30 },
+    priorities: [
+      'Estimer le reste à charge annuel des soins prévus',
+      'Alimenter la provision avant les rendez-vous, pas après',
+      'Vérifier la couverture de la mutuelle chaque année',
+    ],
+    featuredChallenges: ['m_save_10', 'w_review', 'm_no_overdraft'],
   },
   freedom: {
     id: 'envol',

@@ -44,7 +44,7 @@ export function Dashboard() {
 
   const mainGoal = goals[0]
   const mainPocket = mainGoal?.pocketId ? pockets.find((p) => p.id === mainGoal.pocketId) : undefined
-  const saved = mainPocket ? pocketBalance(mainPocket) : (mainGoal?.savedAmount ?? 0)
+  const saved = mainPocket ? pocketBalance(mainPocket, budgets) : 0
   const projection = mainGoal
     ? projectGoal(mainGoal.targetAmount, saved, mainGoal.deadline, month, summary.livingAllowance)
     : null
