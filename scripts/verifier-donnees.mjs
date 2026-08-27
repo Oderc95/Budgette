@@ -21,7 +21,7 @@ const mock = await vite.ssrLoadModule('/src/data/mock.ts')
 const { CATEGORY_BY_ID } = await vite.ssrLoadModule('/src/domain/categories.ts')
 const { summarize, pocketBalance } = await vite.ssrLoadModule('/src/domain/budget.ts')
 const { levelFromXp, stageForLevel } = await vite.ssrLoadModule('/src/domain/gamification.ts')
-const { BADGE_BY_ID, CHALLENGE_BY_ID } = await vite.ssrLoadModule('/src/domain/challenges.ts')
+const { BADGE_BY_ID, CHALLENGES } = await vite.ssrLoadModule('/src/domain/challenges.ts')
 const { STRATEGIES } = await vite.ssrLoadModule('/src/domain/strategy.ts')
 
 const erreurs = []
@@ -127,7 +127,10 @@ for (const badge of MOCK_UNLOCKED) {
   verifier(BADGE_BY_ID[badge.badgeId], `badge inconnu « ${badge.badgeId} »`)
 }
 for (const suivi of MOCK_CHALLENGE_PROGRESS) {
-  verifier(CHALLENGE_BY_ID[suivi.challengeId], `défi inconnu « ${suivi.challengeId} »`)
+  verifier(
+    CHALLENGES.some((c) => c.id === suivi.challengeId),
+    `quête inconnue « ${suivi.challengeId} »`,
+  )
 }
 
 // --- Étiquettes et social ----------------------------------------------------
