@@ -19,6 +19,13 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+  # Sur les propositions de modification, la construction sert de vérification :
+  # une erreur côté Android se voit avant la fusion, et l'APK de la proposition
+  # est essayable sans attendre.
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 permissions:
   contents: read
