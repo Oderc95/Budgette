@@ -2,341 +2,408 @@ import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
-import { GOAL_CATALOG, STRATEGIES, applyRule, emergencyFundTarget } from '../domain/strategy'
+import { GOAL_CATALOG, STRATEGIES, emergencyFundTarget } from '../domain/strategy'
 import type { GoalKind } from '../domain/types'
-import { Ambient, Button, Chip, Progress } from '../components/ui/primitives'
-import { TONE } from '../components/ui/tone'
+import { Ambient, Button } from '../components/ui/primitives'
 import { Icon } from '../components/Icon'
 import { newId } from '../lib/id'
 import { Logo } from '../components/Logo'
 import { Mascot } from '../components/Mascot'
-import { addMonths, euro, monthKey, monthLabel } from '../lib/format'
+import { addMonths, euro, monthKey } from '../lib/format'
 
-const STEPS = ['Vous', 'Objectif', 'Cible', 'Stratégie'] as const
+/**
+ * Questionnaire d'arrivée.
+ *
+ * Il ne demande pas à l'utilisateur de choisir dans un catalogue : il pose
+ * trois questions en langage ordinaire, en déduit un objectif, et le lui
+ * soumet. Refuser est prévu — et « je ne sais pas encore » est une réponse
+ * valable, qui laisse simplement une pastille sur la section Objectifs.
+ */
+
+/** Ce qui amène quelqu'un ici, et l'objectif que cela désigne. */
+const MOTIFS: {
+  id: string
+  label: string
+  detail: string
+  icon: string
+  /** `null` : la personne ne vient pas avec un projet, seulement pour voir. */
+  kind: GoalKind | null
+}[] = [
+  {
+    id: 'brouillard',
+    label: 'Je ne sais pas où part mon argent',
+    detail: 'Le mois se termine et le compte est vide, sans explication.',
+    icon: 'Search',
+    kind: 'emergency',
+  },
+  {
+    id: 'rouge',
+    label: 'Je suis souvent à découvert',
+    detail: 'Il faut d’abord éteindre l’incendie.',
+    icon: 'TrendingDown',
+    kind: 'debt_exit',
+  },
+  {
+    id: 'cote',
+    label: 'Je veux mettre de côté',
+    detail: 'Sans projet précis, mais régulièrement.',
+    icon: 'PiggyBank',
+    kind: 'emergency',
+  },
+  {
+    id: 'projet',
+    label: 'J’ai un projet à financer',
+    detail: 'Un voyage, un logement, un achat qui compte.',
+    icon: 'Target',
+    kind: 'purchase',
+  },
+  {
+    id: 'oeil',
+    label: 'Je veux simplement garder l’œil',
+    detail: 'Suivre mes comptes, sans objectif pour l’instant.',
+    icon: 'Eye',
+    kind: null,
+  },
+]
+
+/** Une phrase par objectif : ce que c'est, sans jargon. */
+const EN_UN_MOT: Record<GoalKind, string> = {
+  emergency:
+    'Une réserve qui dort sur un compte à part, et qui absorbe l’imprévu sans vous mettre à découvert.',
+  debt_exit: 'Un plan pour éteindre découvert et crédits, poste par poste, du plus coûteux au moins coûteux.',
+  travel: 'Une somme mise de côté chaque mois jusqu’au départ, pour partir sans rien devoir à personne.',
+  home: 'L’apport de votre futur logement, construit mois après mois.',
+  study: 'De quoi financer une formation ou des études, sans emprunter.',
+  purchase: 'Un achat qui compte, préparé à l’avance plutôt que subi sur le crédit.',
+  retirement: 'Un versement régulier, très long terme, qu’on oublie une fois mis en place.',
+  freedom: 'Assez de côté pour choisir votre travail plutôt que le subir.',
+  car: 'Un véhicule financé sans crédit, ou avec le moins possible.',
+  wedding: 'Un mariage préparé sans que la note gâche l’année suivante.',
+  baby: 'Le budget d’une arrivée, anticipé avant qu’elle n’arrive.',
+  moving: 'Un déménagement, caution et frais compris, prévu à l’avance.',
+  celebration: 'Une grande occasion, financée sans arrière-pensée.',
+  health: 'Des frais de santé absorbés sans renoncer aux soins.',
+}
+
+const anim = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
+  transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const },
+}
+
+/** Carte de réponse : toute la surface est cliquable, au doigt comme à la souris. */
+function Choix({
+  actif,
+  icon,
+  label,
+  detail,
+  onClick,
+}: {
+  actif: boolean
+  icon: string
+  label: string
+  detail?: string
+  onClick: () => void
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.985 }}
+      className={clsx(
+        'flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition',
+        actif ? 'border-brand bg-brand-soft' : 'border-line bg-surface hover:border-line-strong',
+      )}
+    >
+      <span
+        className={clsx(
+          'grid size-10 shrink-0 place-items-center rounded-xl',
+          actif ? 'bg-brand text-on-accent' : 'bg-surface-2 text-ink-soft',
+        )}
+      >
+        <Icon name={icon} size={18} />
+      </span>
+      <span className="min-w-0">
+        <span className={clsx('block text-[0.92rem] font-semibold leading-tight', actif ? 'text-brand-deep' : 'text-ink')}>
+          {label}
+        </span>
+        {detail && <span className="mt-0.5 block text-[0.78rem] leading-snug text-ink-muted">{detail}</span>}
+      </span>
+    </motion.button>
+  )
+}
 
 export function Onboarding() {
   const completeOnboarding = useApp((s) => s.completeOnboarding)
-  const currentName = useApp((s) => s.profile.displayName)
 
-  const [step, setStep] = useState(0)
-  const [name, setName] = useState(currentName)
-  const [kind, setKind] = useState<GoalKind | null>(null)
-  const [income, setIncome] = useState(2200)
-  const [fixed, setFixed] = useState(1100)
-  const [amount, setAmount] = useState(3000)
-  const [months, setMonths] = useState(12)
+  const [etape, setEtape] = useState(0)
+  const [prenom, setPrenom] = useState('')
+  const [motifId, setMotifId] = useState<string | null>(null)
+  const [revenu, setRevenu] = useState(2000)
+  /** Objectif retenu après refus de la proposition. `undefined` : pas encore tranché. */
+  const [choisi, setChoisi] = useState<GoalKind | null | undefined>(undefined)
 
-  const catalogEntry = kind ? GOAL_CATALOG.find((g) => g.kind === kind)! : null
-  const strategy = kind ? STRATEGIES[kind] : null
-  const suggestedAmount = useMemo(() => {
-    if (!catalogEntry) return 3000
-    if (catalogEntry.suggestedAmount !== null) return catalogEntry.suggestedAmount
-    if (kind === 'emergency') return emergencyFundTarget(fixed, 0, 3)
-    if (kind === 'debt_exit') return 1500
-    return 3000
-  }, [catalogEntry, kind, fixed])
+  const motif = MOTIFS.find((m) => m.id === motifId) ?? null
 
-  const monthlyEffort = amount / Math.max(1, months)
-  const allocation = strategy ? applyRule(strategy, income) : null
-  const effortShare = income > 0 ? monthlyEffort / income : 0
-  const deadline = addMonths(monthKey(new Date()), months)
+  // L'objectif effectif : celui choisi à la main s'il y en a un, sinon celui
+  // déduit du motif.
+  const kind = choisi !== undefined ? choisi : (motif?.kind ?? null)
+  const entree = kind ? GOAL_CATALOG.find((g) => g.kind === kind)! : null
+  const strategie = kind ? STRATEGIES[kind] : null
 
-  const canContinue = step === 0 ? name.trim().length > 0 : step === 1 ? kind !== null : true
+  const montant = useMemo(() => {
+    if (!entree) return 0
+    if (entree.suggestedAmount !== null) return entree.suggestedAmount
+    // Sans montant au catalogue, on le calcule : trois mois de charges, en
+    // estimant les charges à 60 % du revenu déclaré.
+    if (kind === 'emergency') return emergencyFundTarget(Math.round(revenu * 0.6), 0, 3)
+    return Math.max(1000, Math.round((revenu * 0.8) / 100) * 100)
+  }, [entree, kind, revenu])
 
-  function next() {
-    if (step === 1 && kind) {
-      setAmount(suggestedAmount)
-      setMonths(GOAL_CATALOG.find((g) => g.kind === kind)!.suggestedMonths)
-    }
-    setStep((value) => Math.min(STEPS.length - 1, value + 1))
+  const mois = entree?.suggestedMonths ?? 12
+
+  function valider() {
+    completeOnboarding({
+      strategyId: strategie?.id ?? 'bouclier',
+      displayName: prenom,
+      goal:
+        kind && entree
+          ? {
+              id: newId('goal'),
+              kind,
+              label: entree.label,
+              targetAmount: montant,
+              deadline: addMonths(monthKey(new Date()), mois),
+              createdAt: new Date().toISOString(),
+            }
+          : null,
+    })
   }
 
-  function finish() {
-    if (!kind || !strategy || !catalogEntry) return
-    completeOnboarding({
-      strategyId: strategy.id,
-      displayName: name,
-      goal: {
-        id: newId('goal'),
-        kind,
-        label: catalogEntry.label,
-        targetAmount: Math.round(amount),
-        deadline,
-        createdAt: new Date().toISOString(),
-      },
-    })
+  const peutAvancer = etape === 0 ? prenom.trim().length > 0 : etape === 1 ? motif !== null : true
+  // Le revenu ne sert qu'à calibrer un objectif chiffré : sans objectif, on
+  // saute la question plutôt que de la poser pour rien.
+  const derniereEtape = motif?.kind === null && choisi === undefined ? 2 : 3
+
+  function suivant() {
+    if (etape === 1 && motif?.kind === null) {
+      setEtape(2)
+      return
+    }
+    setEtape((v) => Math.min(3, v + 1))
   }
 
   return (
     <>
       <Ambient />
-      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-5 py-8">
-      <header className="mb-8">
-        <Logo size="md" className="mb-5" />
-
-        <div className="flex items-center gap-2">
-          {STEPS.map((label, index) => (
-            <div key={label} className="flex flex-1 flex-col gap-1.5">
-              <Progress value={index <= step ? 1 : 0} tone={index <= step ? 'mint' : 'mint'} height={4} animate={false} />
-              <span className={clsx('text-[0.7rem] font-semibold', index <= step ? 'text-brand-deep' : 'text-ink-muted')}>
-                {label}
-              </span>
-            </div>
-          ))}
+      <div className="pad-safe-top pad-safe-x pad-safe-bottom [--pad-x:1.25rem] [--pad-bottom:1.25rem] relative z-10 mx-auto flex min-h-dvh w-full max-w-lg flex-col">
+        <div className="flex items-center justify-between py-4">
+          <Logo size="sm" tagline={false} />
+          {/* Trois pastilles : la progression se lit d'un coup d'œil, sans texte. */}
+          <div className="flex items-center gap-1.5" aria-label={`Étape ${etape + 1} sur ${derniereEtape + 1}`}>
+            {Array.from({ length: derniereEtape + 1 }).map((_, index) => (
+              <motion.span
+                key={index}
+                className={clsx('block h-1.5 rounded-full', index <= etape ? 'bg-brand' : 'bg-line')}
+                animate={{ width: index === etape ? 22 : 8 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              />
+            ))}
+          </div>
         </div>
-      </header>
 
-      <div className="flex-1">
-        <AnimatePresence mode="wait">
-          {step === 0 && (
-            <motion.div key="step0" {...anim}>
-              <div className="mb-6 flex justify-center">
-                <Mascot stageIndex={0} size={140} />
-              </div>
-              <h1 className="text-center font-display text-3xl leading-tight text-ink">Bienvenue. On commence par vous.</h1>
-              <p className="mx-auto mt-2 max-w-md text-center text-[0.92rem] leading-relaxed text-ink-soft">
-                Budgette ne vous demandera jamais vos identifiants bancaires. Vous saisissez ce que vous voulez, quand
-                vous le voulez.
-              </p>
-              <label className="mx-auto mt-8 flex max-w-sm flex-col gap-1.5">
-                <span className="text-[0.8rem] font-semibold text-ink-soft">Comment doit-on vous appeler ?</span>
+        <div className="flex flex-1 flex-col justify-center py-2">
+          <AnimatePresence mode="wait">
+            {etape === 0 && (
+              <motion.div key="e0" {...anim} className="flex flex-col gap-5">
+                <div className="flex justify-center">
+                  <Mascot stageIndex={1} size={92} />
+                </div>
+                <div className="text-center">
+                  <h1 className="font-display text-[1.9rem] leading-tight text-ink">Bonjour.</h1>
+                  <p className="mt-1.5 text-[0.95rem] text-ink-soft">Comment doit-on vous appeler ?</p>
+                </div>
                 <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  autoFocus
+                  value={prenom}
+                  onChange={(event) => setPrenom(event.target.value)}
                   placeholder="Votre prénom"
-                  className="rounded-xl border border-line bg-surface px-4 py-3 text-center font-display text-lg text-ink outline-none transition focus:border-brand"
+                  className="rounded-2xl border border-line bg-surface px-4 py-3.5 text-center text-ink outline-none transition focus:border-brand"
                 />
-              </label>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {step === 1 && (
-            <motion.div key="step1" {...anim}>
-              <h1 className="text-center font-display text-3xl leading-tight text-ink">Quel est votre objectif ?</h1>
-              <p className="mx-auto mt-2 max-w-md text-center text-[0.92rem] text-ink-soft">
-                Il détermine toute la stratégie. Vous pourrez en ajouter d’autres ensuite.
-              </p>
+            {etape === 1 && (
+              <motion.div key="e1" {...anim} className="flex flex-col gap-4">
+                <div>
+                  <h1 className="font-display text-[1.7rem] leading-tight text-ink">
+                    Qu’est-ce qui vous amène, {prenom.trim()} ?
+                  </h1>
+                  <p className="mt-1 text-[0.88rem] text-ink-soft">Une seule réponse. Elle orientera le reste.</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {MOTIFS.map((m) => (
+                    <Choix
+                      key={m.id}
+                      actif={motifId === m.id}
+                      icon={m.icon}
+                      label={m.label}
+                      detail={m.detail}
+                      onClick={() => {
+                        setMotifId(m.id)
+                        setChoisi(undefined)
+                      }}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                {GOAL_CATALOG.map((goal) => {
-                  const selected = kind === goal.kind
-                  return (
-                    <button
-                      key={goal.kind}
-                      type="button"
-                      onClick={() => setKind(goal.kind)}
-                      className={clsx(
-                        'flex items-start gap-3 rounded-2xl border p-4 text-left transition',
-                        selected
-                          ? 'border-brand bg-brand-soft shadow-soft'
-                          : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2',
-                      )}
-                    >
-                      <span
-                        className={clsx(
-                          'grid size-10 shrink-0 place-items-center rounded-xl transition',
-                          selected ? 'bg-brand text-on-accent' : 'bg-surface-2 text-ink-soft',
-                        )}
+            {etape === 2 && motif?.kind !== null && (
+              <motion.div key="e2" {...anim} className="flex flex-col gap-6">
+                <div>
+                  <h1 className="font-display text-[1.7rem] leading-tight text-ink">
+                    Combien entre, bon mois mauvais mois ?
+                  </h1>
+                  <p className="mt-1 text-[0.88rem] text-ink-soft">
+                    Une estimation suffit. Elle sert à calibrer l’objectif, et se corrige à tout moment.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-line bg-surface p-5 text-center">
+                  <p className="tabular font-display text-4xl text-brand-deep">{euro(revenu)}</p>
+                  <p className="mt-1 text-[0.78rem] text-ink-muted">net, par mois</p>
+                  <input
+                    type="range"
+                    min={500}
+                    max={8000}
+                    step={50}
+                    value={revenu}
+                    onChange={(event) => setRevenu(Number(event.target.value))}
+                    className="mt-4 w-full"
+                    aria-label="Revenu mensuel net"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {etape === 2 && motif?.kind === null && (
+              <motion.div key="e2b" {...anim} className="flex flex-col gap-5 text-center">
+                <div className="flex justify-center">
+                  <Mascot stageIndex={2} size={92} />
+                </div>
+                <div>
+                  <h1 className="font-display text-[1.7rem] leading-tight text-ink">Très bien, on regarde d’abord.</h1>
+                  <p className="mt-2 text-[0.92rem] leading-relaxed text-ink-soft">
+                    Vous entrez sans objectif. Saisissez un mois, voyez ce que ça donne, et fixez un cap quand vous
+                    le sentirez — la section Objectifs vous attendra.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {etape === 3 && (
+              <motion.div key="e3" {...anim} className="flex flex-col gap-5">
+                {kind && entree ? (
+                  <>
+                    <div className="text-center">
+                      <p className="eyebrow">Ce que je vous propose</p>
+                      <motion.div
+                        className="mx-auto mt-3 grid size-16 place-items-center rounded-2xl bg-brand text-on-accent"
+                        initial={{ scale: 0.6, rotate: -12 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 18 }}
                       >
-                        <Icon name={goal.icon} size={19} />
+                        <Icon name={entree.icon} size={30} />
+                      </motion.div>
+                      <h1 className="mt-3 font-display text-[1.7rem] leading-tight text-ink">{entree.label}</h1>
+                      <p className="mx-auto mt-2 max-w-sm text-[0.92rem] leading-relaxed text-ink-soft">
+                        {EN_UN_MOT[kind]}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-6 rounded-2xl border border-line bg-surface-2 py-3.5">
+                      <span className="text-center">
+                        <span className="block text-[0.68rem] uppercase tracking-widest text-ink-muted">Cible</span>
+                        <span className="tabular block font-display text-lg text-ink">{euro(montant)}</span>
                       </span>
-                      <span className="min-w-0">
-                        <span className="block font-display text-[1.02rem] leading-tight text-ink">{goal.label}</span>
-                        <span className="mt-0.5 block text-[0.8rem] leading-snug text-ink-muted">{goal.tagline}</span>
+                      <span className="h-8 w-px bg-line" />
+                      <span className="text-center">
+                        <span className="block text-[0.68rem] uppercase tracking-widest text-ink-muted">Horizon</span>
+                        <span className="tabular block font-display text-lg text-ink">{mois} mois</span>
                       </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </motion.div>
-          )}
+                    </div>
 
-          {step === 2 && catalogEntry && (
-            <motion.div key="step2" {...anim}>
-              <h1 className="text-center font-display text-3xl leading-tight text-ink">{catalogEntry.label} : on chiffre.</h1>
-              <p className="mx-auto mt-2 max-w-md text-center text-[0.92rem] text-ink-soft">
-                Ces montants restent modifiables à tout moment. Approximatif suffit pour démarrer.
-              </p>
-
-              <div className="mx-auto mt-8 flex max-w-md flex-col gap-6">
-                <Field
-                  label="Revenu net mensuel"
-                  value={income}
-                  onChange={setIncome}
-                  min={0}
-                  max={8000}
-                  step={50}
-                  suffix="€"
-                />
-                <Field
-                  label="Charges fixes mensuelles"
-                  hint="Loyer, énergie, téléphone, courses, assurances…"
-                  value={fixed}
-                  onChange={setFixed}
-                  min={0}
-                  max={6000}
-                  step={50}
-                  suffix="€"
-                />
-                <Field
-                  label="Montant à atteindre"
-                  hint={
-                    kind === 'emergency'
-                      ? `Trois mois de charges, soit environ ${euro(emergencyFundTarget(fixed, 0, 3))}`
-                      : undefined
-                  }
-                  value={amount}
-                  onChange={setAmount}
-                  min={100}
-                  max={kind === 'home' || kind === 'retirement' || kind === 'freedom' ? 200000 : 30000}
-                  step={100}
-                  suffix="€"
-                />
-                <Field
-                  label="En combien de mois ?"
-                  value={months}
-                  onChange={setMonths}
-                  min={1}
-                  max={240}
-                  step={1}
-                  suffix="mois"
-                  hint={`Échéance : ${monthLabel(deadline)}`}
-                />
-              </div>
-            </motion.div>
-          )}
-
-          {step === 3 && strategy && allocation && (
-            <motion.div key="step3" {...anim}>
-              <div className="mb-5 flex justify-center">
-                <Mascot stageIndex={2} size={120} />
-              </div>
-              <p className="text-center">
-                <Chip tone="amber" icon="Sparkles">
-                  Stratégie recommandée
-                </Chip>
-              </p>
-              <h1 className="mt-3 text-center font-display text-3xl leading-tight text-ink">{strategy.name}</h1>
-              <p className="mx-auto mt-3 max-w-lg text-center text-[0.92rem] leading-relaxed text-ink-soft">
-                {strategy.rationale}
-              </p>
-
-              <div className="mt-7 rounded-2xl border border-line bg-surface p-5">
-                <p className="eyebrow mb-3">Votre effort mensuel</p>
-                <div className="flex items-end justify-between gap-4">
-                  <p className="tabular font-display text-4xl leading-none text-mint-deep">{euro(monthlyEffort)}</p>
-                  <p className="text-right text-[0.8rem] leading-snug text-ink-muted">
-                    par mois pendant {months} mois
-                    <br />
-                    soit {Math.round(effortShare * 100)} % de votre revenu
-                  </p>
-                </div>
-                <div className="mt-4">
-                  <Progress value={effortShare} tone={effortShare > 0.35 ? 'berry' : 'mint'} />
-                  <p className="mt-2 text-[0.78rem] leading-snug text-ink-muted">
-                    {effortShare > 0.35
-                      ? "C'est un effort très soutenu. Allonger le délai de quelques mois le rendra tenable — et un plan tenu vaut mieux qu'un plan parfait abandonné."
-                      : 'Un rythme réaliste : vous devriez pouvoir le tenir sans vous priver de tout.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {(
-                  [
-                    { key: 'needs', label: 'Besoins', value: allocation.needs, pct: strategy.rule.needs, tone: 'indigo' as const },
-                    { key: 'wants', label: 'Envies', value: allocation.wants, pct: strategy.rule.wants, tone: 'orchid' as const },
-                    { key: 'future', label: 'Avenir', value: allocation.future, pct: strategy.rule.future, tone: 'amber' as const },
-                  ]
-                ).map((slice) => (
-                  <div key={slice.key} className={clsx('rounded-2xl border p-4', TONE[slice.tone].bg, TONE[slice.tone].border)}>
-                    <p className="eyebrow">{slice.label}</p>
-                    <p className={clsx('tabular mt-1 font-display text-2xl leading-none', TONE[slice.tone].text)}>
-                      {euro(slice.value)}
+                    <p className="text-center text-[0.78rem] text-ink-muted">
+                      Rien n’est figé : montant et échéance se modifient dans Objectifs.
                     </p>
-                    <p className="mt-1 text-[0.75rem] text-ink-muted">{slice.pct} % du revenu</p>
-                  </div>
-                ))}
-              </div>
+                  </>
+                ) : (
+                  /* Refus de la proposition : on ouvre le catalogue, et on
+                     assume l'absence d'objectif comme une réponse à part. */
+                  <>
+                    <div>
+                      <h1 className="font-display text-[1.6rem] leading-tight text-ink">Alors qu’est-ce qui compte ?</h1>
+                      <p className="mt-1 text-[0.88rem] text-ink-soft">Choisissez, ou remettez à plus tard.</p>
+                    </div>
+                    <div className="flex max-h-[46vh] flex-col gap-2 overflow-y-auto pr-1">
+                      {GOAL_CATALOG.map((entry) => (
+                        <Choix
+                          key={entry.kind}
+                          actif={false}
+                          icon={entry.icon}
+                          label={entry.label}
+                          detail={entry.tagline}
+                          onClick={() => setChoisi(entry.kind)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-              <ul className="mt-4 flex flex-col gap-2 rounded-2xl border border-line bg-surface-2 p-4">
-                <p className="eyebrow mb-1">Vos trois priorités</p>
-                {strategy.priorities.map((priority) => (
-                  <li key={priority} className="flex items-start gap-2 text-[0.85rem] leading-snug text-ink-soft">
-                    <Icon name="Check" size={15} className="mt-0.5 shrink-0 text-mint" />
-                    {priority}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+        {/* Commandes, toujours au même endroit : le pouce n'a pas à chercher. */}
+        <div className="flex flex-col gap-2 pt-3">
+          {etape === 3 ? (
+            <>
+              <Button size="lg" full iconRight="ArrowRight" onClick={valider}>
+                {kind ? 'C’est parti' : 'Entrer sans objectif'}
+              </Button>
+              {kind && (
+                <Button variant="ghost" size="md" full onClick={() => setChoisi(null)}>
+                  Pas tout à fait
+                </Button>
+              )}
+            </>
+          ) : etape === derniereEtape ? (
+            <Button size="lg" full iconRight="ArrowRight" onClick={valider} disabled={!peutAvancer}>
+              Entrer dans Budgette
+            </Button>
+          ) : (
+            <Button size="lg" full iconRight="ArrowRight" onClick={suivant} disabled={!peutAvancer}>
+              Continuer
+            </Button>
           )}
-        </AnimatePresence>
-      </div>
 
-      <footer className="mt-8 flex items-center justify-between gap-3">
-        <Button variant="ghost" icon="ArrowLeft" onClick={() => setStep((v) => Math.max(0, v - 1))} disabled={step === 0}>
-          Retour
-        </Button>
-        {step < STEPS.length - 1 ? (
-          <Button size="lg" iconRight="ArrowRight" onClick={next} disabled={!canContinue}>
-            Continuer
-          </Button>
-        ) : (
-          <Button size="lg" iconRight="Sparkles" onClick={finish}>
-            C’est parti
-          </Button>
-        )}
-      </footer>
+          {etape > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              full
+              icon="ArrowLeft"
+              onClick={() => {
+                setChoisi(undefined)
+                setEtape((v) => Math.max(0, v - 1))
+              }}
+            >
+              Retour
+            </Button>
+          )}
+        </div>
       </div>
     </>
-  )
-}
-
-const anim = {
-  initial: { opacity: 0, y: 14 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-  transition: { duration: 0.25, ease: 'easeOut' as const },
-}
-
-function Field({
-  label,
-  hint,
-  value,
-  onChange,
-  min,
-  max,
-  step,
-  suffix,
-}: {
-  label: string
-  hint?: string
-  value: number
-  onChange: (value: number) => void
-  min: number
-  max: number
-  step: number
-  suffix: string
-}) {
-  return (
-    <div>
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <span className="text-[0.85rem] font-semibold text-ink">{label}</span>
-        <span className="tabular font-display text-xl text-brand-deep">
-          {value.toLocaleString('fr-FR')} {suffix}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full"
-        aria-label={label}
-      />
-      {hint && <p className="mt-1.5 text-[0.78rem] leading-snug text-ink-muted">{hint}</p>}
-    </div>
   )
 }

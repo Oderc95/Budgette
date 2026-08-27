@@ -485,34 +485,30 @@
   }
 
   /*
-    Encoche et barre d'accueil des téléphones. La page est déclarée
-    `viewport-fit=cover` : le navigateur nous laisse peindre sous ces zones,
-    donc c'est à nous de les réserver. Sur un écran qui n'en a pas, `env()`
-    vaut zéro et ces règles ne changent rien.
+    Zones sûres : encoche, barre d'état, barre d'accueil.
 
-    Les deux règles liées à la barre d'onglets s'arrêtent au point de bascule
-    de la mise en page, là où la navigation repasse sur le côté : au-delà, la
-    barre n'existe plus et rien ne doit être réservé.
+    Chaque classe *ajoute* l'espace système à une marge de base, donnée par
+    `--pad-x`, `--pad-top` ou `--pad-bottom`. C'est nécessaire : une classe
+    utilitaire qui poserait `padding-left` entrerait en concurrence avec la
+    classe `px-*` du même élément, et l'une des deux écraserait l'autre selon
+    l'ordre du fichier produit — la marge latérale disparaissait, le texte
+    touchait les bords. La base se déclare donc sur l'élément lui-même, par
+    exemple `pad-safe-x [--pad-x:1rem]`, et les deux valeurs s'additionnent au
+    lieu de se disputer la propriété.
+
+    Sur un écran sans encoche, `env()` vaut zéro : il ne reste que la base.
   */
-  .pad-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  /*
-    Encoche et barre d'état, en haut. La valeur s'ajoute à la marge intérieure
-    déjà posée par la classe utilitaire de l'élément.
-
-    Dans l'application Android, la barre d'état ne recouvre pas la vue web —
-    `reglerBarresSysteme` le demande au système — et `env()` vaut alors zéro.
-    Cette règle sert le web installé sur l'écran d'accueil, et iOS.
-  */
-  .pad-safe-top {
-    padding-top: calc(0.75rem + env(safe-area-inset-top));
-  }
-
   .pad-safe-x {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-left: calc(var(--pad-x, 0px) + env(safe-area-inset-left));
+    padding-right: calc(var(--pad-x, 0px) + env(safe-area-inset-right));
+  }
+
+  .pad-safe-top {
+    padding-top: calc(var(--pad-top, 0px) + env(safe-area-inset-top));
+  }
+
+  .pad-safe-bottom {
+    padding-bottom: calc(var(--pad-bottom, 0px) + env(safe-area-inset-bottom));
   }
 
   @media (width < 64rem) {

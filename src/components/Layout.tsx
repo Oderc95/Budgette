@@ -5,8 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Toaster } from './Toaster'
-import { Tour } from './Tour'
-import { GoalPrompt } from './GoalPrompt'
+import { BilanCloture } from './BilanCloture'
 import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../domain/gamification'
 import { Ambient, Progress } from './ui/primitives'
 import { Logo } from './Logo'
@@ -14,13 +13,14 @@ import { Mascot } from './Mascot'
 import { useCascade } from '../lib/useCascade'
 import { monthKey } from '../lib/format'
 import { reglerBarresSysteme } from '../lib/native'
+import { objectifManquant, sectionsOuvertes, type SectionId } from '../domain/progression'
 
 /**
  * Ordre de lecture des écrans : il donne la direction des transitions. Aller
  * vers un écran plus à droite dans la barre fait glisser le contenu vers la
  * gauche, et inversement — le mouvement raconte la navigation.
  */
-const ROUTE_ORDER = ['/', '/mois', '/annee', '/quetes', '/objectifs', '/jardin', '/profil', '/admin']
+const ROUTE_ORDER = ['/', '/mois', '/objectifs', '/quetes', '/annee', '/jardin', '/profil', '/admin']
 
 const ECRAN = {
   enter: (direction: number) => ({ opacity: 0, x: 44 * direction, scale: 0.985 }),
@@ -39,17 +39,42 @@ const ECRAN = {
 }
 
 /*
- * La barre d'onglets mobile n'affiche que les cinq premières entrées : « Mon
- * année » vit après, accessible depuis la barre latérale et l'écran d'accueil.
+ * Destinations, dans l'ordre de lecture. Objectifs passe avant Quêtes : on se
+ * donne un cap avant de recevoir des défis qui servent ce cap.
+ *
+ * Chaque entrée porte sa section : celles qui ne sont pas encore ouvertes
+ * disparaissent de la barre. Un compte neuf n'affiche donc que l'accueil, la
+ * saisie et les objectifs — le reste apparaît à mesure qu'il prend son sens.
  */
-const NAV = [
-  { to: '/', label: 'Accueil', icon: 'LayoutDashboard', end: true },
-  { to: '/mois', label: 'Mon mois', icon: 'PenLine' },
-  { to: '/quetes', label: 'Quêtes', icon: 'ListChecks' },
-  { to: '/objectifs', label: 'Objectifs', icon: 'Target' },
-  { to: '/jardin', label: 'Jardin', icon: 'Sprout' },
-  { to: '/annee', label: 'Mon année', icon: 'CalendarRange' },
+const NAV: { to: string; label: string; icon: string; end?: boolean; section: SectionId }[] = [
+  { to: '/', label: 'Accueil', icon: 'LayoutDashboard', end: true, section: 'accueil' },
+  { to: '/mois', label: 'Mon mois', icon: 'PenLine', section: 'mois' },
+  { to: '/objectifs', label: 'Objectifs', icon: 'Target', section: 'objectifs' },
+  { to: '/quetes', label: 'Quêtes', icon: 'ListChecks', section: 'quetes' },
+  { to: '/jardin', label: 'Jardin', icon: 'Sprout', section: 'jardin' },
+  { to: '/annee', label: 'Mon année', icon: 'CalendarRange', section: 'annee' },
 ]
+
+/**
+ * Pastille d'appel, empruntée aux jeux : un point d'exclamation qui bat sur
+ * l'onglet où quelque chose attend. Elle ne s'affiche que sur Objectifs, et
+ * seulement tant qu'aucun objectif n'existe.
+ */
+function Pastille({ className }: { className?: string }) {
+  return (
+    <motion.span
+      className={clsx(
+        'pointer-events-none grid size-4 place-items-center rounded-full bg-berry text-[0.6rem] font-bold text-on-accent',
+        className,
+      )}
+      animate={{ scale: [1, 1.22, 1] }}
+      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+      aria-hidden
+    >
+      !
+    </motion.span>
+  )
+}
 
 /**
  * Applique le choix de thème sur l'élément racine, et accorde les barres
@@ -156,7 +181,29 @@ export function Layout() {
   const streak = useApp((s) => s.profile.streak.current)
   const season = seasonForMonth(monthKey(new Date()))
 
-  const nav = role === 'admin' ? [...NAV, { to: '/admin', label: 'Admin', icon: 'Shield' }] : NAV
+  const budgets = useApp((s) => s.budgets)
+  const goals = useApp((s) => s.goals)
+  const pockets = useApp((s) => s.pockets)
+  const profile = useApp((s) => s.profile)
+  const activeMonth = useApp((s) => s.activeMonth)
+  const ouvertes = sectionsOuvertes({ budgets, goals, profile, activeMonth })
+
+  /*
+   * Les quêtes se recalculent après chaque changement de données, où qu'il
+   * ait eu lieu. Le faire ici plutôt que dans chaque action du magasin évite
+   * d'oublier un chemin : toute modification finit par repasser par un rendu
+   * de la mise en page.
+   */
+  const syncQuetes = useApp((s) => s.syncQuetes)
+  useEffect(() => {
+    syncQuetes()
+  }, [budgets, goals, pockets, syncQuetes])
+  const reclame = objectifManquant({ goals })
+
+  const visibles = NAV.filter((item) => ouvertes.has(item.section))
+  const nav = role === 'admin'
+    ? [...visibles, { to: '/admin', label: 'Admin', icon: 'Shield', section: 'profil' as SectionId }]
+    : visibles
 
   const navRef = useCascade<HTMLElement>(':scope > a', [], { fromY: 10, step: 40 })
 
@@ -184,7 +231,7 @@ export function Layout() {
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1400px]">
       {/* Navigation latérale — écrans larges */}
       {/* La marge intérieure tient les blocs à distance du trait de séparation. */}
-      <aside className="pad-safe-x sticky top-0 hidden h-dvh w-[19.5rem] shrink-0 flex-col gap-5 border-r border-line bg-bg/80 px-6 py-6 backdrop-blur-xl lg:flex">
+      <aside className="pad-safe-x [--pad-x:1.5rem] sticky top-0 hidden h-dvh w-[19.5rem] shrink-0 flex-col gap-5 border-r border-line bg-bg/80 py-6 backdrop-blur-xl lg:flex">
         <Logo size="md" />
 
         <nav ref={navRef} className="flex flex-col gap-1">
@@ -211,6 +258,7 @@ export function Layout() {
                   )}
                   <Icon name={item.icon} size={18} />
                   {item.label}
+                  {item.to === '/objectifs' && reclame && <Pastille className="ml-auto" />}
                 </>
               )}
             </NavLink>
@@ -251,7 +299,7 @@ export function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barre supérieure — écrans étroits */}
-        <header className="pad-safe-top pad-safe-x sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 pb-3 backdrop-blur-xl lg:hidden">
+        <header className="pad-safe-top pad-safe-x [--pad-x:1rem] [--pad-top:0.75rem] sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/90 pb-3 backdrop-blur-xl lg:hidden">
           {/* La signature ne tient pas à côté des commandes sur un écran étroit. */}
           <Logo size="sm" tagline={false} />
           <div className="flex shrink-0 items-center gap-2">
@@ -309,7 +357,7 @@ export function Layout() {
 
         {/* Navigation basse — écrans étroits */}
         <nav className="pad-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 backdrop-blur-xl lg:hidden">
-          <div className="pad-safe-x mx-auto flex max-w-lg items-stretch justify-between px-2 py-1.5">
+          <div className="pad-safe-x [--pad-x:0.5rem] mx-auto flex max-w-lg items-stretch justify-between py-1.5">
             {nav.slice(0, 5).map((item) => (
               <NavLink
                 key={item.to}
@@ -324,8 +372,9 @@ export function Layout() {
               >
                 {({ isActive }) => (
                   <>
-                    <span className={clsx('grid size-8 place-items-center rounded-lg', isActive && 'bg-brand-soft')}>
+                    <span className={clsx('relative grid size-8 place-items-center rounded-lg', isActive && 'bg-brand-soft')}>
                       <Icon name={item.icon} size={17} />
+                      {item.to === '/objectifs' && reclame && <Pastille className="absolute -right-1 -top-0.5" />}
                     </span>
                     <span className="truncate">{item.label}</span>
                   </>
@@ -336,8 +385,7 @@ export function Layout() {
         </nav>
       </div>
 
-      <Tour />
-      <GoalPrompt />
+      <BilanCloture />
       <Toaster />
       </div>
     </>

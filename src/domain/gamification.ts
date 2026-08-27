@@ -147,10 +147,24 @@ export const CADENCE_META: Record<
   ChallengeCadence,
   { label: string; plural: string; icon: string; resetHint: string }
 > = {
-  daily: { label: 'Quotidien', plural: 'Défis du jour', icon: 'Sun', resetHint: 'Se réinitialise à minuit' },
-  weekly: { label: 'Hebdomadaire', plural: 'Défis de la semaine', icon: 'CalendarDays', resetHint: 'Se réinitialise lundi' },
-  monthly: { label: 'Mensuel', plural: 'Défis du mois', icon: 'CalendarRange', resetHint: 'Se réinitialise le 1er' },
-  yearly: { label: 'Annuel', plural: 'Défis de l’année', icon: 'Trophy', resetHint: 'Se réinitialise le 1er janvier' },
+  unique: {
+    label: 'Découverte',
+    plural: 'À faire une fois',
+    icon: 'Sparkles',
+    resetHint: 'Ne se rejoue pas',
+  },
+  monthly: {
+    label: 'Ce mois-ci',
+    plural: 'Quêtes du mois',
+    icon: 'CalendarRange',
+    resetHint: 'Se rejoue chaque mois',
+  },
+  yearly: {
+    label: 'Cette année',
+    plural: 'Quêtes de l’année',
+    icon: 'Trophy',
+    resetHint: 'Se compte sur l’année civile',
+  },
 }
 
 export const DIFFICULTY_META = {

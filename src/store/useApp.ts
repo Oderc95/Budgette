@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type {
+  ChallengeCadence,
   ChallengeProgress,
   Friend,
   Goal,
@@ -26,25 +27,33 @@ import {
   MOCK_TAGS,
   MOCK_UNLOCKED,
 } from '../data/mock'
-import { CHALLENGE_BY_ID } from '../domain/challenges'
+import { BADGE_BY_ID, CHALLENGES, badgesAcquis, estReussie, mesurer } from '../domain/challenges'
 import { pocketCategoryId } from '../domain/budget'
 import { CATEGORY_BY_ID } from '../domain/categories'
-import { addMonths, dayKey, monthKey, weekKey } from '../lib/format'
-import { streakMultiplier } from '../domain/gamification'
+import { addMonths, monthKey } from '../lib/format'
+import { levelFromXp } from '../domain/gamification'
+
+/** Ce qu'une clôture a produit, le temps d'une cérémonie. */
+export interface Bilan {
+  month: MonthKey
+  xpGagne: number
+  badges: string[]
+  niveauAvant: number
+  niveauApres: number
+}
 
 export type ThemeChoice = 'system' | 'light' | 'dark'
 
 /** Période courante d'un défi, selon sa cadence. */
-export function periodFor(cadence: string, now = new Date()): string {
+/** Période à laquelle une quête est rattachée, pour le mois affiché. */
+export function periodFor(cadence: ChallengeCadence, month: MonthKey): string {
   switch (cadence) {
-    case 'daily':
-      return dayKey(now)
-    case 'weekly':
-      return weekKey(now)
+    case 'unique':
+      return 'once'
     case 'monthly':
-      return monthKey(now)
+      return month
     default:
-      return String(now.getFullYear())
+      return month.slice(0, 4)
   }
 }
 
@@ -70,10 +79,6 @@ interface AppState {
   toasts: Toast[]
   /** Mois affiché dans les écrans de saisie et de synthèse. */
   activeMonth: MonthKey
-  /** Visite guidée : montrée une seule fois, à la première arrivée. */
-  tourDone: boolean
-  /** Après la visite : proposer de définir son objectif, une seule fois. */
-  goalPromptPending: boolean
   /** Étiquettes libres, collées sur des lignes de saisie. */
   tags: Tag[]
   /**
@@ -87,10 +92,18 @@ interface AppState {
   groups: Group[]
   /** Charges, dettes et versements définis à l'avance au calendrier. */
   planned: PlannedItem[]
+  /**
+   * Instantané de la dernière clôture, consommé par la cérémonie de bilan.
+   * `null` le reste du temps : l'écran ne s'ouvre que juste après le geste.
+   */
+  bilan: Bilan | null
 
   signIn: () => void
+  /** Compte neuf et vide, qui passe par le questionnaire d'arrivée. */
+  signUp: () => void
   signOut: () => void
-  completeOnboarding: (input: { strategyId: string; goal: Goal; displayName?: string }) => void
+  completeOnboarding: (input: { strategyId: string; goal: Goal | null; displayName?: string }) => void
+  setDisplayName: (displayName: string) => void
   setTheme: (theme: ThemeChoice) => void
   setActiveMonth: (month: MonthKey) => void
   setLine: (month: MonthKey, categoryId: string, amount: number, key?: string) => void
@@ -99,7 +112,14 @@ interface AppState {
   ensureMonth: (month: MonthKey) => void
   closeMonth: (month: MonthKey, mood: 1 | 2 | 3 | 4 | 5, note?: string) => void
   reopenMonth: (month: MonthKey) => void
-  toggleChallenge: (challengeId: string) => void
+  /** Referme la cérémonie de bilan. */
+  clearBilan: () => void
+  /**
+   * Recalcule les quêtes depuis les données et crédite celles qui viennent
+   * d'être réussies. Rejouable sans effet de bord : le registre des quêtes
+   * déjà créditées empêche de payer deux fois.
+   */
+  syncQuetes: () => void
   setStrategy: (strategyId: string) => void
   addGoal: (goal: Goal) => void
   removeGoal: (goalId: string) => void
@@ -124,13 +144,11 @@ interface AppState {
   removeGroupMember: (groupId: string, memberId: string) => void
   leaveGroup: (groupId: string) => void
   contributeToGroup: (groupId: string, month: MonthKey, amount: number) => void
-  dismissGoalPrompt: () => void
   addPlanned: (item: PlannedItem) => void
   removePlanned: (id: string) => void
   grantXp: (amount: number, reason: string) => void
   pushToast: (toast: Omit<Toast, 'id'>) => void
   dismissToast: (id: number) => void
-  completeTour: () => void
   resetDemo: () => void
 }
 
@@ -146,8 +164,6 @@ const initial = () => ({
   theme: 'system' as ThemeChoice,
   toasts: [] as Toast[],
   activeMonth: latestMonth(MOCK_BUDGETS),
-  tourDone: false,
-  goalPromptPending: false,
   tags: MOCK_TAGS,
   // Le dernier mois clôturé du jeu de démonstration sert de référence.
   referenceMonth: '2026-07' as MonthKey | null,
@@ -155,7 +171,46 @@ const initial = () => ({
   friends: MOCK_FRIENDS,
   groups: MOCK_GROUPS,
   planned: MOCK_PLANNED,
+  bilan: null as Bilan | null,
 })
+
+/**
+ * Compte neuf.
+ *
+ * `initial()` porte le jeu de démonstration : douze mois saisis, des badges
+ * déjà décrochés, un objectif en cours. Utile pour montrer l'application
+ * remplie, inutilisable pour juger l'arrivée d'une personne qui n'a rien.
+ * Cette fonction produit l'autre extrémité : un compte vide, sur le mois
+ * courant, sans nom ni objectif.
+ */
+function vierge() {
+  const mois = monthKey(new Date())
+  return {
+    ...initial(),
+    onboarded: false,
+    profile: {
+      ...MOCK_PROFILE,
+      id: 'usr_nouveau',
+      pseudo: '',
+      displayName: '',
+      email: '',
+      role: 'user' as const,
+      createdAt: new Date().toISOString(),
+      xp: 0,
+      streak: { current: 0, best: 0 },
+    },
+    budgets: [{ month: mois, lines: [], closed: false }] as MonthBudget[],
+    goals: [] as Goal[],
+    unlocked: [] as UnlockedBadge[],
+    challengeProgress: [] as ChallengeProgress[],
+    pockets: [] as SavingsPocket[],
+    planned: [] as PlannedItem[],
+    friends: [] as Friend[],
+    groups: [] as Group[],
+    activeMonth: mois,
+    referenceMonth: null as MonthKey | null,
+  }
+}
 
 function latestMonth(budgets: MonthBudget[]): MonthKey {
   const live = monthKey(new Date())
@@ -193,19 +248,25 @@ export const useApp = create<AppState>()(
       ...initial(),
 
       signIn: () => set({ authenticated: true }),
+      signUp: () => set({ ...vierge(), authenticated: true }),
       signOut: () => set({ authenticated: false }),
 
       completeOnboarding: ({ strategyId, goal, displayName }) =>
         set((state) => ({
           onboarded: true,
           authenticated: true,
-          goals: [goal, ...state.goals.filter((g) => g.id !== goal.id)],
+          // Sans objectif, la liste reste vide : la section Objectifs porte
+          // alors une pastille, plutôt que de bloquer l'entrée dans l'app.
+          goals: goal ? [goal, ...state.goals.filter((g) => g.id !== goal.id)] : state.goals,
           profile: {
             ...state.profile,
             strategyId,
             displayName: displayName?.trim() || state.profile.displayName,
           },
         })),
+
+      setDisplayName: (displayName) =>
+        set((state) => ({ profile: { ...state.profile, displayName: displayName.trim() } })),
 
       setTheme: (theme) => set({ theme }),
       setActiveMonth: (activeMonth) => set({ activeMonth }),
@@ -269,6 +330,12 @@ export const useApp = create<AppState>()(
       closeMonth: (month, mood, note) => {
         const budget = get().budgets.find((b) => b.month === month)
         if (!budget || budget.closed) return
+
+        // Instantané d'avant : la cérémonie compare, elle ne recalcule pas.
+        const avant = {
+          xp: get().profile.xp,
+          badges: new Set(get().unlocked.map((u) => u.badgeId)),
+        }
         set((state) => ({
           budgets: state.budgets.map((b) =>
             b.month === month ? { ...b, closed: true, closedAt: new Date().toISOString(), mood, note } : b,
@@ -294,8 +361,21 @@ export const useApp = create<AppState>()(
           get().ensureMonth(suivant)
           get().setLine(suivant, 'inc_carryover', Math.round(reste))
         }
-        get().grantXp(CHALLENGE_BY_ID.m_close.xp, 'Mois clôturé')
+        get().syncQuetes()
+
+        const apres = get()
+        set({
+          bilan: {
+            month,
+            xpGagne: apres.profile.xp - avant.xp,
+            badges: apres.unlocked.filter((u) => !avant.badges.has(u.badgeId)).map((u) => u.badgeId),
+            niveauAvant: levelFromXp(avant.xp).level,
+            niveauApres: levelFromXp(apres.profile.xp).level,
+          },
+        })
       },
+
+      clearBilan: () => set({ bilan: null }),
 
       reopenMonth: (month) =>
         set((state) => ({
@@ -304,41 +384,116 @@ export const useApp = create<AppState>()(
           ),
         })),
 
-      toggleChallenge: (challengeId) => {
-        const challenge = CHALLENGE_BY_ID[challengeId]
-        if (!challenge) return
-        const period = periodFor(challenge.cadence)
-        const existing = get().challengeProgress.find(
-          (p) => p.challengeId === challengeId && p.period === period,
-        )
-        const nowCompleted = !existing?.completed
+      syncQuetes: () => {
+        const state = get()
+        const { budgets, pockets, goals } = state
 
-        set((state) => {
-          const others = state.challengeProgress.filter(
-            (p) => !(p.challengeId === challengeId && p.period === period),
-          )
-          return {
-            challengeProgress: [
-              ...others,
-              {
-                challengeId,
+        /*
+         * Périodes à examiner. Une quête ponctuelle ne se joue qu'une fois ;
+         * une quête mensuelle se rejoue à chaque mois saisi ; une quête
+         * annuelle, à chaque année représentée. On ne parcourt que ce qui
+         * existe : un compte neuf ne fait donc presque rien ici.
+         */
+        const mois = budgets.map((b) => b.month).sort()
+        const annees = [...new Set(mois.map((m) => m.slice(0, 4)))]
+
+        const nouvelles: { challengeId: string; period: string; xp: number; titre: string }[] = []
+
+        for (const challenge of CHALLENGES) {
+          const periodes =
+            challenge.cadence === 'unique'
+              ? ['once']
+              : challenge.cadence === 'monthly'
+                ? mois
+                : annees
+
+          for (const period of periodes) {
+            const dejaCredite = state.challengeProgress.some(
+              (p) => p.challengeId === challenge.id && p.period === period && p.completed,
+            )
+            if (dejaCredite) continue
+
+            // Le mois de mesure : la période elle-même pour une quête
+            // mensuelle, le premier mois de l'année pour une quête annuelle,
+            // le mois courant pour une quête ponctuelle.
+            const moisMesure =
+              challenge.cadence === 'monthly'
+                ? period
+                : challenge.cadence === 'yearly'
+                  ? (mois.find((m) => m.startsWith(period)) ?? state.activeMonth)
+                  : state.activeMonth
+
+            const ctx = { budgets, month: moisMesure, pockets, goals }
+            if (estReussie(challenge, mesurer(challenge, ctx), ctx)) {
+              nouvelles.push({
+                challengeId: challenge.id,
                 period,
-                value: nowCompleted ? challenge.target : 0,
-                completed: nowCompleted,
-                completedAt: nowCompleted ? new Date().toISOString() : undefined,
-              },
-            ],
+                xp: challenge.xp,
+                titre: challenge.title,
+              })
+            }
           }
-        })
-
-        if (nowCompleted) {
-          const multiplier = streakMultiplier(get().profile.streak.current)
-          get().grantXp(Math.round(challenge.xp * multiplier), challenge.title)
-        } else {
-          set((state) => ({
-            profile: { ...state.profile, xp: Math.max(0, state.profile.xp - challenge.xp) },
-          }))
         }
+
+        /*
+         * Badges. Ils étaient posés à la main dans le jeu de démonstration et
+         * ne se débloquaient jamais autrement. Ils suivent désormais le même
+         * chemin que les quêtes : mesurés, puis crédités une fois.
+         */
+        const dejaObtenus = new Set(state.unlocked.map((u) => u.badgeId))
+        const ctxBadges = {
+          budgets,
+          month: state.activeMonth,
+          pockets,
+          goals,
+          retired: state.retired,
+        }
+        const nouveauxBadges = badgesAcquis(ctxBadges, state.profile.streak.best).filter(
+          (id) => !dejaObtenus.has(id),
+        )
+
+        if (nouvelles.length === 0 && nouveauxBadges.length === 0) return
+
+        const gain =
+          nouvelles.reduce((total, n) => total + n.xp, 0) +
+          nouveauxBadges.reduce((total, id) => total + (BADGE_BY_ID[id]?.xp ?? 0), 0)
+        set((current) => ({
+          challengeProgress: [
+            ...current.challengeProgress,
+            ...nouvelles.map((n) => ({
+              challengeId: n.challengeId,
+              period: n.period,
+              value: 1,
+              completed: true,
+              completedAt: new Date().toISOString(),
+            })),
+          ],
+          unlocked: [
+            ...current.unlocked,
+            ...nouveauxBadges.map((badgeId) => ({ badgeId, unlockedAt: new Date().toISOString() })),
+          ],
+          profile: { ...current.profile, xp: current.profile.xp + gain },
+          /*
+           * Une seule notification, même quand plusieurs quêtes tombent
+           * ensemble : la première saisie en valide quatre d'un coup, et
+           * quatre bulles empilées noieraient le message.
+           */
+          toasts: [
+            ...current.toasts,
+            {
+              id: Date.now(),
+              title:
+                nouvelles.length === 0
+                  ? `${nouveauxBadges.length} badge${nouveauxBadges.length > 1 ? 's' : ''} débloqué${nouveauxBadges.length > 1 ? 's' : ''}`
+                  : nouvelles.length === 1
+                    ? nouvelles[0].titre
+                    : `${nouvelles.length} quêtes validées`,
+              body: `+${gain} XP`,
+              tone: 'amber' as const,
+              icon: 'Trophy',
+            },
+          ],
+        }))
       },
 
       setStrategy: (strategyId) =>
@@ -412,15 +567,11 @@ export const useApp = create<AppState>()(
       acceptFriend: (friendId) =>
         set((state) => ({
           friends: state.friends.map((f) => (f.id === friendId ? { ...f, status: 'ami' } : f)),
-          // Se rattacher à quelqu'un sans objectif propre : on propose d'en
-          // définir un, comme à la fin de la visite guidée.
-          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
         })),
 
       createGroup: (group) => {
         set((state) => ({
           groups: [...state.groups, group],
-          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
         }))
         get().pushToast({ title: 'Groupe créé !', detail: group.name, tone: 'indigo', icon: 'Users' })
       },
@@ -461,28 +612,25 @@ export const useApp = create<AppState>()(
           }),
         })),
 
-      dismissGoalPrompt: () => set({ goalPromptPending: false }),
-
       addPlanned: (item) => set((state) => ({ planned: [...state.planned, item] })),
       removePlanned: (id) => set((state) => ({ planned: state.planned.filter((p) => p.id !== id) })),
-
-      // La fin de la visite enchaîne sur la définition de l'objectif.
-      completeTour: () => set({ tourDone: true, goalPromptPending: true }),
 
       resetDemo: () => set({ ...initial(), authenticated: true }),
     }),
     {
       name: 'budgette-demo',
       storage: safeStorage,
-      // La session et les notifications ne sont jamais persistées.
-      partialize: ({ toasts: _toasts, authenticated: _auth, ...rest }) => rest,
+      // La session, les notifications et la cérémonie de clôture ne sont
+      // jamais persistées : rouvrir l'application ne doit pas rejouer un
+      // bilan déjà vu.
+      partialize: ({ toasts: _toasts, authenticated: _auth, bilan: _bilan, ...rest }) => rest,
       /*
        * Un état persisté d'une version antérieure est jeté, pas raccommodé :
        * ce sont des données de démonstration, et les garder ferait cohabiter
        * l'ancien profil avec le nouveau jeu. La v3 introduit les étiquettes, les
        * groupes et le mois de référence.
        */
-      version: 4,
+      version: 5,
       migrate: () => ({ ...initial() }),
     },
   ),
@@ -494,8 +642,16 @@ export function useBudget(month: MonthKey): MonthBudget | undefined {
   return useApp((s) => s.budgets.find((b) => b.month === month))
 }
 
+/**
+ * État enregistré d'une quête sur le mois affiché.
+ *
+ * Il dit seulement si la quête a déjà été créditée en expérience. L'affichage,
+ * lui, se fonde sur la mesure en direct : une quête peut redevenir non
+ * atteinte si l'utilisateur corrige sa saisie, sans qu'on lui reprenne l'XP.
+ */
 export function useChallengeState(challengeId: string): ChallengeProgress | undefined {
-  const challenge = CHALLENGE_BY_ID[challengeId]
-  const period = challenge ? periodFor(challenge.cadence) : ''
+  const challenge = CHALLENGES.find((c) => c.id === challengeId)
+  const month = useApp((s) => s.activeMonth)
+  const period = challenge ? periodFor(challenge.cadence, month) : ''
   return useApp((s) => s.challengeProgress.find((p) => p.challengeId === challengeId && p.period === period))
 }

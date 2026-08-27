@@ -11,6 +11,7 @@ import { Mascot } from '../components/Mascot'
 import { FlowBar } from '../components/FlowBar'
 import { TrendChart } from '../components/TrendChart'
 import { ChallengeCard } from '../components/ChallengeCard'
+import { PremiersPas } from '../components/PremiersPas'
 import { breakdown, healthScore, pocketBalance, projectGoal, summarize } from '../domain/budget'
 import { buildInsights } from '../domain/insights'
 import { CHALLENGES } from '../domain/challenges'
@@ -36,7 +37,9 @@ export function Dashboard() {
   const upcoming = nextStage(level.level)
   const strategy = STRATEGY_BY_ID[profile.strategyId]
 
-  const dailies = CHALLENGES.filter((c) => c.cadence === 'daily').slice(0, 4)
+  // Les quêtes du mois, celles qui se rejouent : ce sont les seules qui
+  // appellent une action maintenant.
+  const dailies = CHALLENGES.filter((c) => c.cadence === 'monthly').slice(0, 4)
   const topSpending = [
     ...breakdown(budget, 'discretionary'),
     ...breakdown(budget, 'fixed'),
@@ -91,6 +94,10 @@ export function Dashboard() {
           </Link>
         </div>
       </header>
+
+      {/* Ce qui reste à faire pour qu'un compte neuf devienne un compte vivant.
+          Ne s'affiche que tant qu'il reste un geste. */}
+      <PremiersPas />
 
       {/*
         La bande d'indicateurs : les quatre chiffres du mois, une seule fois.

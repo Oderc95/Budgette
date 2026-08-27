@@ -62,6 +62,7 @@ function TitreAnime({ texte }: { texte: string }) {
 
 export function SignIn() {
   const signIn = useApp((s) => s.signIn)
+  const signUp = useApp((s) => s.signUp)
   const [email, setEmail] = useState('camille@budgette.app')
   const [password, setPassword] = useState('demo')
   const [showPassword, setShowPassword] = useState(false)
@@ -129,7 +130,7 @@ export function SignIn() {
         le contenu doit pouvoir déborder plutôt que d'être rogné. Sur un
         téléphone ordinaire, tout tient sans défilement.
       */}
-      <div className="pad-safe-top pad-safe-x flex min-h-dvh flex-col justify-center gap-7 px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div className="pad-safe-top pad-safe-x pad-safe-bottom [--pad-x:1.5rem] [--pad-bottom:1.5rem] flex min-h-dvh flex-col justify-center gap-7">
         <motion.div className="mx-auto w-full max-w-sm" variants={scene} initial="hidden" animate="visible">
           <motion.div variants={piece}>
             <Logo size="lg" layout="column" className="mb-6" draw />
@@ -184,7 +185,10 @@ export function SignIn() {
               <Button type="submit" size="lg" full iconRight="ArrowRight">
                 Se connecter
               </Button>
-              <Button type="button" variant="ghost" size="md" full onClick={signIn}>
+              {/* Un compte neuf part d'une page blanche et passe par le
+                  questionnaire d'arrivée ; « Se connecter » reprend le compte
+                  de démonstration, déjà rempli. */}
+              <Button type="button" variant="ghost" size="md" full onClick={signUp}>
                 Créer un compte
               </Button>
             </motion.div>
