@@ -130,7 +130,7 @@ export function SignIn() {
         le contenu doit pouvoir déborder plutôt que d'être rogné. Sur un
         téléphone ordinaire, tout tient sans défilement.
       */}
-      <div className="pad-safe-top pad-safe-x flex min-h-dvh flex-col justify-center gap-7 px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div className="pad-safe-top pad-safe-x pad-safe-bottom [--pad-x:1.5rem] [--pad-bottom:1.5rem] flex min-h-dvh flex-col justify-center gap-7">
         <motion.div className="mx-auto w-full max-w-sm" variants={scene} initial="hidden" animate="visible">
           <motion.div variants={piece}>
             <Logo size="lg" layout="column" className="mb-6" draw />

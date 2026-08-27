@@ -236,6 +236,8 @@ export interface ContexteMesure {
   month: MonthKey
   pockets: SavingsPocket[]
   goals: Goal[]
+  /** Catégories déclarées « plus d'actualité », et depuis quel mois. */
+  retired?: Record<string, MonthKey>
 }
 
 /** Lignes non nulles d'un mois, par flux. */
@@ -430,10 +432,10 @@ export const BADGES: Badge[] = [
     xp: 400,
   },
   {
-    id: 'no_atm_3',
-    label: 'Sans distributeur',
-    description: 'Trois mois de suite sans le moindre retrait d’espèces.',
-    criteria: '3 mois consécutifs sans retrait',
+    id: 'all_paid_3',
+    label: 'Rien d’oublié',
+    description: 'Trois mois où chaque charge fixe a été pointée comme payée.',
+    criteria: '3 mois avec toutes les charges pointées',
     rarity: 'rare',
     icon: 'Landmark',
     tone: 'indigo',
@@ -540,15 +542,91 @@ export const BADGES: Badge[] = [
     xp: 1400,
   },
   {
-    id: 'frugal_week',
-    label: 'Semaine légère',
-    description: 'Une semaine entière sans livraison de repas.',
-    criteria: 'Réussir « Semaine sans livraison »',
+    id: 'documented_6',
+    label: 'Mémoire longue',
+    description: 'Six mois où au moins trois lignes portent une note ou une étiquette.',
+    criteria: '6 mois documentés',
     rarity: 'commun',
     icon: 'ChefHat',
     tone: 'mint',
     xp: 150,
   },
 ]
+
+/**
+ * Badges décrochés, d'après les données.
+ *
+ * Ils étaient posés à la main dans le jeu de démonstration et ne se
+ * débloquaient jamais autrement : aucun compte réel n'en aurait obtenu un.
+ * Chaque critère se lit ici dans les mois saisis, la série, et les poches
+ * d'épargne — rien de déclaratif.
+ */
+export function badgesAcquis(ctx: ContexteMesure, streakBest: number): string[] {
+  const { budgets, pockets, goals } = ctx
+  const clotures = budgets.filter((b) => b.closed)
+  const resumes = clotures.map((b) => summarize(b, b.month))
+
+  /** Nombre de mois où toutes les charges fixes sont pointées payées. */
+  const moisPointes = clotures.filter((b) => {
+    const fixes = lignes(b, 'fixed')
+    return fixes.length > 0 && fixes.every((l) => l.paid)
+  }).length
+
+  const moisDocumentes = budgets.filter(
+    (b) => b.lines.filter((l) => l.note?.trim() || (l.tagIds?.length ?? 0) > 0).length >= 3,
+  ).length
+
+  /** Épargne totale disponible, toutes poches confondues. */
+  const epargne = pockets.reduce((total, poche) => total + pocketBalance(poche, budgets), 0)
+  /** Charges d'un mois type, pour exprimer le matelas en mois de dépenses. */
+  const chargeType =
+    resumes.length > 0
+      ? resumes.reduce((t, r) => t + r.totals.fixed + r.totals.debt, 0) / resumes.length
+      : 0
+  const moisDeMatelas = chargeType > 0 ? epargne / chargeType : 0
+
+  const objectifsAtteints = goals.filter((goal) => {
+    const poche = goal.pocketId ? pockets.find((p) => p.id === goal.pocketId) : undefined
+    return poche ? pocketBalance(poche, budgets) >= goal.targetAmount : false
+  }).length
+
+  /*
+   * Phénix : un mois terminé dans le rouge, puis le suivant dans le vert.
+   * Les mois sont triés par clé, qui est chronologique par construction.
+   */
+  const ordonnes = [...resumes].sort((a, b) => a.month.localeCompare(b.month))
+  const phenix = ordonnes.some(
+    (r, index) => index > 0 && ordonnes[index - 1].endOfMonth < 0 && r.endOfMonth >= 0,
+  )
+
+  const tauxEpargne = (r: (typeof resumes)[number]) =>
+    r.totals.income > 0 ? r.totals.saving / r.totals.income : 0
+
+  const conditions: Record<string, boolean> = {
+    first_step: budgets.some((b) => b.lines.some((l) => l.amount > 0)),
+    streak_7: streakBest >= 7,
+    streak_30: streakBest >= 30,
+    streak_100: streakBest >= 100,
+    streak_365: streakBest >= 365,
+    green_month: resumes.some((r) => r.endOfMonth >= 0),
+    phoenix: phenix,
+    all_paid_3: moisPointes >= 3,
+    // Résilier, dans l'application, c'est retirer une charge de la saisie :
+    // c'est exactement ce que consigne `retired`.
+    sub_slayer: Object.keys(ctx.retired ?? {}).length >= 3,
+    saver_10: resumes.some((r) => tauxEpargne(r) >= 0.1),
+    saver_20: resumes.some((r) => tauxEpargne(r) >= 0.2),
+    emergency_1m: moisDeMatelas >= 1,
+    emergency_3m: moisDeMatelas >= 3,
+    emergency_6m: moisDeMatelas >= 6,
+    debt_zero: clotures.length > 0 && resumes.every((r) => r.totals.debt === 0),
+    goal_first: objectifsAtteints >= 1,
+    goal_5: objectifsAtteints >= 5,
+    month_12: clotures.length >= 12,
+    documented_6: moisDocumentes >= 6,
+  }
+
+  return BADGES.filter((badge) => conditions[badge.id]).map((badge) => badge.id)
+}
 
 export const BADGE_BY_ID: Record<string, Badge> = Object.fromEntries(BADGES.map((b) => [b.id, b]))

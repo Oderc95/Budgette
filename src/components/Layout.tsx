@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Toaster } from './Toaster'
+import { BilanCloture } from './BilanCloture'
 import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../domain/gamification'
 import { Ambient, Progress } from './ui/primitives'
 import { Logo } from './Logo'
@@ -230,7 +231,7 @@ export function Layout() {
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1400px]">
       {/* Navigation latérale — écrans larges */}
       {/* La marge intérieure tient les blocs à distance du trait de séparation. */}
-      <aside className="pad-safe-x sticky top-0 hidden h-dvh w-[19.5rem] shrink-0 flex-col gap-5 border-r border-line bg-bg/80 px-6 py-6 backdrop-blur-xl lg:flex">
+      <aside className="pad-safe-x [--pad-x:1.5rem] sticky top-0 hidden h-dvh w-[19.5rem] shrink-0 flex-col gap-5 border-r border-line bg-bg/80 py-6 backdrop-blur-xl lg:flex">
         <Logo size="md" />
 
         <nav ref={navRef} className="flex flex-col gap-1">
@@ -298,7 +299,7 @@ export function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barre supérieure — écrans étroits */}
-        <header className="pad-safe-top pad-safe-x sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 pb-3 backdrop-blur-xl lg:hidden">
+        <header className="pad-safe-top pad-safe-x [--pad-x:1rem] [--pad-top:0.75rem] sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/90 pb-3 backdrop-blur-xl lg:hidden">
           {/* La signature ne tient pas à côté des commandes sur un écran étroit. */}
           <Logo size="sm" tagline={false} />
           <div className="flex shrink-0 items-center gap-2">
@@ -356,7 +357,7 @@ export function Layout() {
 
         {/* Navigation basse — écrans étroits */}
         <nav className="pad-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 backdrop-blur-xl lg:hidden">
-          <div className="pad-safe-x mx-auto flex max-w-lg items-stretch justify-between px-2 py-1.5">
+          <div className="pad-safe-x [--pad-x:0.5rem] mx-auto flex max-w-lg items-stretch justify-between py-1.5">
             {nav.slice(0, 5).map((item) => (
               <NavLink
                 key={item.to}
@@ -384,6 +385,7 @@ export function Layout() {
         </nav>
       </div>
 
+      <BilanCloture />
       <Toaster />
       </div>
     </>

@@ -27,10 +27,20 @@ import {
   MOCK_TAGS,
   MOCK_UNLOCKED,
 } from '../data/mock'
-import { CHALLENGES, estReussie, mesurer } from '../domain/challenges'
+import { BADGE_BY_ID, CHALLENGES, badgesAcquis, estReussie, mesurer } from '../domain/challenges'
 import { pocketCategoryId } from '../domain/budget'
 import { CATEGORY_BY_ID } from '../domain/categories'
 import { addMonths, monthKey } from '../lib/format'
+import { levelFromXp } from '../domain/gamification'
+
+/** Ce qu'une clôture a produit, le temps d'une cérémonie. */
+export interface Bilan {
+  month: MonthKey
+  xpGagne: number
+  badges: string[]
+  niveauAvant: number
+  niveauApres: number
+}
 
 export type ThemeChoice = 'system' | 'light' | 'dark'
 
@@ -82,6 +92,11 @@ interface AppState {
   groups: Group[]
   /** Charges, dettes et versements définis à l'avance au calendrier. */
   planned: PlannedItem[]
+  /**
+   * Instantané de la dernière clôture, consommé par la cérémonie de bilan.
+   * `null` le reste du temps : l'écran ne s'ouvre que juste après le geste.
+   */
+  bilan: Bilan | null
 
   signIn: () => void
   /** Compte neuf et vide, qui passe par le questionnaire d'arrivée. */
@@ -97,6 +112,8 @@ interface AppState {
   ensureMonth: (month: MonthKey) => void
   closeMonth: (month: MonthKey, mood: 1 | 2 | 3 | 4 | 5, note?: string) => void
   reopenMonth: (month: MonthKey) => void
+  /** Referme la cérémonie de bilan. */
+  clearBilan: () => void
   /**
    * Recalcule les quêtes depuis les données et crédite celles qui viennent
    * d'être réussies. Rejouable sans effet de bord : le registre des quêtes
@@ -154,6 +171,7 @@ const initial = () => ({
   friends: MOCK_FRIENDS,
   groups: MOCK_GROUPS,
   planned: MOCK_PLANNED,
+  bilan: null as Bilan | null,
 })
 
 /**
@@ -312,6 +330,12 @@ export const useApp = create<AppState>()(
       closeMonth: (month, mood, note) => {
         const budget = get().budgets.find((b) => b.month === month)
         if (!budget || budget.closed) return
+
+        // Instantané d'avant : la cérémonie compare, elle ne recalcule pas.
+        const avant = {
+          xp: get().profile.xp,
+          badges: new Set(get().unlocked.map((u) => u.badgeId)),
+        }
         set((state) => ({
           budgets: state.budgets.map((b) =>
             b.month === month ? { ...b, closed: true, closedAt: new Date().toISOString(), mood, note } : b,
@@ -338,7 +362,20 @@ export const useApp = create<AppState>()(
           get().setLine(suivant, 'inc_carryover', Math.round(reste))
         }
         get().syncQuetes()
+
+        const apres = get()
+        set({
+          bilan: {
+            month,
+            xpGagne: apres.profile.xp - avant.xp,
+            badges: apres.unlocked.filter((u) => !avant.badges.has(u.badgeId)).map((u) => u.badgeId),
+            niveauAvant: levelFromXp(avant.xp).level,
+            niveauApres: levelFromXp(apres.profile.xp).level,
+          },
+        })
       },
+
+      clearBilan: () => set({ bilan: null }),
 
       reopenMonth: (month) =>
         set((state) => ({
@@ -398,9 +435,28 @@ export const useApp = create<AppState>()(
           }
         }
 
-        if (nouvelles.length === 0) return
+        /*
+         * Badges. Ils étaient posés à la main dans le jeu de démonstration et
+         * ne se débloquaient jamais autrement. Ils suivent désormais le même
+         * chemin que les quêtes : mesurés, puis crédités une fois.
+         */
+        const dejaObtenus = new Set(state.unlocked.map((u) => u.badgeId))
+        const ctxBadges = {
+          budgets,
+          month: state.activeMonth,
+          pockets,
+          goals,
+          retired: state.retired,
+        }
+        const nouveauxBadges = badgesAcquis(ctxBadges, state.profile.streak.best).filter(
+          (id) => !dejaObtenus.has(id),
+        )
 
-        const gain = nouvelles.reduce((total, n) => total + n.xp, 0)
+        if (nouvelles.length === 0 && nouveauxBadges.length === 0) return
+
+        const gain =
+          nouvelles.reduce((total, n) => total + n.xp, 0) +
+          nouveauxBadges.reduce((total, id) => total + (BADGE_BY_ID[id]?.xp ?? 0), 0)
         set((current) => ({
           challengeProgress: [
             ...current.challengeProgress,
@@ -412,6 +468,10 @@ export const useApp = create<AppState>()(
               completedAt: new Date().toISOString(),
             })),
           ],
+          unlocked: [
+            ...current.unlocked,
+            ...nouveauxBadges.map((badgeId) => ({ badgeId, unlockedAt: new Date().toISOString() })),
+          ],
           profile: { ...current.profile, xp: current.profile.xp + gain },
           /*
            * Une seule notification, même quand plusieurs quêtes tombent
@@ -422,7 +482,12 @@ export const useApp = create<AppState>()(
             ...current.toasts,
             {
               id: Date.now(),
-              title: nouvelles.length === 1 ? nouvelles[0].titre : `${nouvelles.length} quêtes validées`,
+              title:
+                nouvelles.length === 0
+                  ? `${nouveauxBadges.length} badge${nouveauxBadges.length > 1 ? 's' : ''} débloqué${nouveauxBadges.length > 1 ? 's' : ''}`
+                  : nouvelles.length === 1
+                    ? nouvelles[0].titre
+                    : `${nouvelles.length} quêtes validées`,
               body: `+${gain} XP`,
               tone: 'amber' as const,
               icon: 'Trophy',
@@ -555,8 +620,10 @@ export const useApp = create<AppState>()(
     {
       name: 'budgette-demo',
       storage: safeStorage,
-      // La session et les notifications ne sont jamais persistées.
-      partialize: ({ toasts: _toasts, authenticated: _auth, ...rest }) => rest,
+      // La session, les notifications et la cérémonie de clôture ne sont
+      // jamais persistées : rouvrir l'application ne doit pas rejouer un
+      // bilan déjà vu.
+      partialize: ({ toasts: _toasts, authenticated: _auth, bilan: _bilan, ...rest }) => rest,
       /*
        * Un état persisté d'une version antérieure est jeté, pas raccommodé :
        * ce sont des données de démonstration, et les garder ferait cohabiter

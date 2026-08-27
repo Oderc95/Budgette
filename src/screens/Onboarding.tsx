@@ -197,7 +197,7 @@ export function Onboarding() {
   return (
     <>
       <Ambient />
-      <div className="pad-safe-top pad-safe-x relative z-10 mx-auto flex min-h-dvh w-full max-w-lg flex-col px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+      <div className="pad-safe-top pad-safe-x pad-safe-bottom [--pad-x:1.25rem] [--pad-bottom:1.25rem] relative z-10 mx-auto flex min-h-dvh w-full max-w-lg flex-col">
         <div className="flex items-center justify-between py-4">
           <Logo size="sm" tagline={false} />
           {/* Trois pastilles : la progression se lit d'un coup d'œil, sans texte. */}
