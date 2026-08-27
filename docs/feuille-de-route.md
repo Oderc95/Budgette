@@ -38,12 +38,28 @@ Objectif : valider l'ergonomie et le ton avant d'écrire la moindre migration de
 - [ ] Politique de confidentialité, conditions générales, mentions légales
 - [ ] Export et suppression de compte réellement branchés
 - [ ] Revue de sécurité complète
-- [ ] Application web installable, utilisable hors ligne
+- [x] Application web installable, utilisable hors ligne
 
 ## Phase 6 — Mobile
 
 Le dossier `domain/` étant indépendant de React, la logique métier se transporte telle quelle.
-Décision à prendre entre une application installable enrichie et un portage React Native.
+
+L'application installable a été livrée par avance, en même temps que la passe de confort tactile :
+elle ne coûtait presque rien à ce stade, et elle permet de juger l'ergonomie sur un vrai téléphone
+sans attendre le reste. Elle ne préempte aucune décision — manifeste, service worker et cibles
+d'appui servent autant un portage Capacitor qu'un portage React Native.
+
+Reste à trancher, et à faire après la phase 5 :
+
+- [ ] Choix du portage : emballage Capacitor du build web, ou portage React Native
+- [ ] Publication sur le Play Store — compte Google Developer déjà ouvert
+- [ ] Persistance native, en remplacement du stockage du navigateur, pour que le système ne
+      puisse pas purger les données sous pression mémoire
+
+La publication attend délibérément la phase 5 : le Play Store exige une politique de
+confidentialité, un formulaire « sécurité des données » et une suppression de compte
+fonctionnelle, qui en font partie. Publier avant reviendrait à livrer un prototype à données
+fictives, et à s'imposer le rythme des revues du store pendant que le produit bouge encore.
 
 ## Écarté pour l'instant
 

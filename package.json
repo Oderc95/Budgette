@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/service-worker.mjs",
     "build:artifact": "tsc -b && ARTIFACT=1 vite build && node scripts/make-artifact.mjs",
     "preview": "vite preview",
     "lint": "oxlint",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "icones": "node scripts/icones.mjs"
   },
   "dependencies": {
     "animejs": "^4.5.0",

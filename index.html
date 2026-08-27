@@ -6,11 +6,18 @@
     <meta name="description" content="Budgette — un coach budgétaire ludique : objectifs, défis et progression, en français." />
     <meta name="color-scheme" content="light dark" />
     <!-- Teinte la barre du navigateur mobile de la couleur de fond du thème. -->
-    <meta name="theme-color" content="#fff6ee" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#f6e9d8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1a1119" media="(prefers-color-scheme: dark)" />
     <!-- Chemins relatifs : la page est servie depuis un sous-dossier sur GitHub Pages. -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <!-- Application installable : icônes, nom et couleurs de l'écran de démarrage. -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <!-- iOS ignore le manifeste : sans ces deux balises, l'icône ajoutée à
+         l'écran d'accueil rouvre la page dans Safari, barre d'adresse comprise. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Budgette" />
     <title>Budgette</title>
   </head>
   <body>

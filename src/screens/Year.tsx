@@ -178,7 +178,7 @@ export function Year() {
                         }}
                         aria-label={`Supprimer ${item.label}`}
                         title={item.recurrence === 'monthly' ? 'Supprimer — tous les mois' : 'Supprimer'}
-                        className="grid size-5 shrink-0 place-items-center rounded text-ink-muted transition hover:text-berry-deep"
+                        className="zone-appui grid size-5 shrink-0 place-items-center rounded text-ink-muted transition hover:text-berry-deep"
                       >
                         <Icon name="X" size={11} />
                       </button>
