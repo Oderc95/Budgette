@@ -12,6 +12,7 @@ import { BudgetVsReal } from '../components/BudgetVsReal'
 import { ReferenceCard } from '../components/ReferenceCard'
 import { TagPicker } from '../components/TagPicker'
 import { burst } from '../lib/wow'
+import { aUnePrevision, ecartsNotables, favorable, previsionDuMois } from '../domain/previsions'
 import { addMonths, euro, euroSigned, monthKey, monthLabel } from '../lib/format'
 import { lineKey } from '../domain/types'
 import type { BudgetLine, Flow } from '../domain/types'
@@ -36,6 +37,7 @@ export function MonthEntry() {
   const removeLine = useApp((s) => s.removeLine)
   const planned = useApp((s) => s.planned)
   const retired = useApp((s) => s.retired)
+  const referenceMonth = useApp((s) => s.referenceMonth)
   const tags = useApp((s) => s.tags)
   const goals = useApp((s) => s.goals)
   const pockets = useApp((s) => s.pockets)
@@ -48,10 +50,20 @@ export function MonthEntry() {
   const [celebrate, setCelebrate] = useState(false)
   /** Ligne dont le volet étiquettes / ponctuel est ouvert. */
   const [detailFor, setDetailFor] = useState<string | null>(null)
+  /** Explication de l'écart aux prévisions, saisie à la clôture. */
+  const [noteEcart, setNoteEcart] = useState('')
 
   const budget = budgets.find((b) => b.month === month)
   const summary = summarize(budget, month)
   const previous = budgets.find((b) => b.month === addMonths(month, -1))
+
+  /*
+   * Écarts entre ce qui était prévu et ce qui a été vécu. Ils ne servent qu'à
+   * la clôture : c'est le seul moment où l'on sait que le mois est complet, et
+   * donc le seul où la question a un sens.
+   */
+  const prevu = previsionDuMois(month, { budgets, referenceMonth, retired, planned })
+  const ecarts = aUnePrevision(prevu) ? ecartsNotables(prevu, summary.totals) : []
   const locked = budget?.closed ?? false
 
   // Une catégorie peut porter plusieurs lignes : son montant est leur somme.
@@ -98,7 +110,8 @@ export function MonthEntry() {
   }
 
   function handleClose(mood: 1 | 2 | 3 | 4 | 5) {
-    closeMonth(month, mood)
+    closeMonth(month, mood, noteEcart.trim() || undefined)
+    setNoteEcart('')
     setClosing(false)
     setCelebrate(true)
     window.setTimeout(() => setCelebrate(false), 2600)
@@ -320,9 +333,29 @@ export function MonthEntry() {
                               <Icon name={category.icon} size={15} />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <label htmlFor={`in-${rowKey}`} className="block truncate text-[0.88rem] font-medium text-ink">
-                                {line?.label ?? category.label}
-                              </label>
+                              {/*
+                                Quand une catégorie porte plusieurs lignes,
+                                l'intitulé est le seul moyen de les distinguer :
+                                il se modifie directement ici, sans ouvrir de
+                                volet. Une ligne unique garde son simple nom de
+                                catégorie, non modifiable, pour ne pas alourdir
+                                le cas courant.
+                              */}
+                              {line && catLines.length > 1 && !locked ? (
+                                <input
+                                  value={line.label ?? ''}
+                                  placeholder={category.label}
+                                  aria-label={`Intitulé de cette ligne « ${category.label} »`}
+                                  onChange={(event) =>
+                                    setLineDetails(month, rowKey, { label: event.target.value || undefined })
+                                  }
+                                  className="w-full truncate rounded-md border border-transparent bg-transparent text-[0.88rem] font-medium text-ink outline-none transition hover:border-line focus:border-brand"
+                                />
+                              ) : (
+                                <label htmlFor={`in-${rowKey}`} className="block truncate text-[0.88rem] font-medium text-ink">
+                                  {line?.label ?? category.label}
+                                </label>
+                              )}
                               {linked ? (
                                 <span className="tabular block truncate text-[0.72rem] text-amber-deep">
                                   → « {linked.goal.label} » · {euro(linked.balance)} / {euro(linked.goal.targetAmount)}
@@ -610,6 +643,40 @@ export function MonthEntry() {
                   </dd>
                 </div>
               </dl>
+
+              {/*
+                Écart aux prévisions. La note est facultative : on n'empêche
+                personne de clôturer parce qu'il n'a pas envie de se justifier.
+                Mais posée maintenant, elle vaut mieux que reconstituée dans six
+                mois — c'est ce qui rendra l'histogramme de l'année lisible.
+              */}
+              {ecarts.length > 0 && (
+                <div className="mt-5 rounded-xl border border-amber/30 bg-amber-soft p-3.5">
+                  <p className="flex items-center gap-2 text-[0.82rem] font-semibold text-ink">
+                    <Icon name="AlertCircle" size={15} className="text-amber-deep" />
+                    Le mois s’écarte de vos prévisions
+                  </p>
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {ecarts.slice(0, 3).map((e) => (
+                      <li key={e.flow} className="tabular flex items-center justify-between text-[0.78rem]">
+                        <span className="text-ink-soft">{FLOW_META[e.flow].short}</span>
+                        <span className={favorable(e.flow, e.ecart) ? 'text-mint-deep' : 'text-berry-deep'}>
+                          {euro(e.prevu)} prévu → {euro(e.reel)} ({euroSigned(e.ecart)})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <label className="mt-3 block">
+                    <span className="text-[0.76rem] text-ink-soft">Une raison ? (facultatif)</span>
+                    <input
+                      value={noteEcart}
+                      onChange={(event) => setNoteEcart(event.target.value)}
+                      placeholder="Le loyer a augmenté en juin"
+                      className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-[0.85rem] text-ink outline-none focus:border-brand"
+                    />
+                  </label>
+                </div>
+              )}
 
               <p className="mt-5 text-[0.85rem] font-semibold text-ink">Comment avez-vous vécu ce mois ?</p>
               <div className="mt-2.5 grid grid-cols-5 gap-2">

@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
-import { CATEGORY_BY_ID, FLOW_META, FLOW_ORDER } from '../domain/categories'
-import type { FlowTotals, MonthSummary } from '../domain/budget'
-import type { Flow, MonthKey } from '../domain/types'
+import { FLOW_META, FLOW_ORDER } from '../domain/categories'
+import type { MonthSummary } from '../domain/budget'
+import { favorable, previsionDuMois } from '../domain/previsions'
+import type { MonthKey } from '../domain/types'
 import { Card, CardHeader } from './ui/primitives'
 import { TONE } from './ui/tone'
 import { Icon } from './Icon'
@@ -15,14 +16,6 @@ const EASE = [0.22, 1, 0.36, 1] as const
 
 /** Hauteur utile des barres du comparatif, en pixels. */
 const HAUTEUR = 108
-
-/**
- * Un écart est bon signe quand il va dans le sens du flux : plus de revenus ou
- * d'épargne que prévu, moins de charges, de dettes ou d'envies.
- */
-function favorable(flow: Flow, ecart: number): boolean {
-  return flow === 'income' || flow === 'saving' ? ecart >= 0 : ecart <= 0
-}
 
 /**
  * Budget vs réel : la partie haute de « Mon mois ».
@@ -42,22 +35,7 @@ export function BudgetVsReal({ month, summary }: { month: MonthKey; summary: Mon
 
   const reference = budgets.find((b) => b.month === referenceMonth && b.closed && b.month !== month)
 
-  const prevu: FlowTotals = { income: 0, fixed: 0, debt: 0, saving: 0, discretionary: 0 }
-  // Le report du mois précédent n'est pas prévisible : il reste hors budget.
-  const refLines = (reference?.lines ?? []).filter(
-    (line) => !line.oneOff && !retired[line.categoryId] && line.categoryId !== 'inc_carryover',
-  )
-  for (const line of refLines) {
-    const flow = CATEGORY_BY_ID[line.categoryId]?.flow
-    if (flow) prevu[flow] += line.amount
-  }
-  for (const item of planned) {
-    if (item.recurrence !== 'monthly' && item.month !== month) continue
-    // Même poste, même montant dans la référence : déjà compté.
-    if (refLines.some((l) => l.categoryId === item.categoryId && l.amount === item.amount)) continue
-    const flow = CATEGORY_BY_ID[item.categoryId]?.flow
-    if (flow) prevu[flow] += item.amount
-  }
+  const prevu = previsionDuMois(month, { budgets, referenceMonth, retired, planned })
 
   const reel = summary.totals
   const aBudget = FLOW_ORDER.some((flow) => prevu[flow] > 0)

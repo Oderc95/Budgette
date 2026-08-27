@@ -311,9 +311,28 @@ export const useApp = create<AppState>()(
         set((state) => ({
           budgets: state.budgets.map((budget) => {
             if (budget.month !== month || budget.closed) return budget
-            const existants = budget.lines.filter((l) => l.categoryId === categoryId).length
-            const key = `${categoryId}~${Date.now().toString(36)}${existants}`
-            return { ...budget, lines: [...budget.lines, { categoryId, key, label, amount }] }
+            const existants = budget.lines.filter((l) => l.categoryId === categoryId)
+            const key = `${categoryId}~${Date.now().toString(36)}${existants.length}`
+
+            /*
+             * Deux lignes d'une même catégorie sans intitulé afficheraient
+             * « Loyer » deux fois, sans rien pour les distinguer — c'est
+             * exactement ce qu'on veut éviter. À partir de la deuxième, un
+             * intitulé numéroté est posé d'office, et reste modifiable.
+             * La première ligne, elle, garde le nom de sa catégorie.
+             */
+            const nomCategorie = CATEGORY_BY_ID[categoryId]?.label ?? 'Ligne'
+            const intitule = label ?? (existants.length > 0 ? `${nomCategorie} ${existants.length + 1}` : undefined)
+
+            // La ligne d'origine était anonyme : elle devient explicitement la
+            // première, pour que la paire se lise « Loyer 1 » et « Loyer 2 ».
+            const lignes = budget.lines.map((l) =>
+              l.categoryId === categoryId && existants.length === 1 && !l.label
+                ? { ...l, label: `${nomCategorie} 1` }
+                : l,
+            )
+
+            return { ...budget, lines: [...lignes, { categoryId, key, label: intitule, amount }] }
           }),
         }))
       },

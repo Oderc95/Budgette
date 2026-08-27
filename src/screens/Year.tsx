@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
+import { EcartAnnuel } from '../components/EcartAnnuel'
 import { CATEGORIES, CATEGORY_BY_ID, FLOW_META } from '../domain/categories'
 import { summarize } from '../domain/budget'
 import type { MonthKey, PlannedItem } from '../domain/types'
@@ -95,6 +96,10 @@ export function Year() {
       </header>
 
       {/* Le récap annuel, en trois chiffres */}
+      {/* L'écart aux prévisions, avant le détail mois par mois : c'est la
+          lecture d'ensemble qu'on vient chercher sur cet écran. */}
+      <EcartAnnuel annee={annee} />
+
       <Card>
         <div className="grid grid-cols-2 gap-3 px-5 py-4 sm:grid-cols-3">
           <div className="min-w-0">

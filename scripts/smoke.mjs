@@ -57,23 +57,9 @@ for (const theme of ['light', 'dark']) {
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await page.waitForSelector('text=Où part mon argent', { timeout: 15000 })
 
-  // La visite guidée accueille la première connexion : on la capture, on la
-  // parcourt en entier (chaque étape doit s'afficher sans erreur), puis elle
-  // ne doit plus jamais réapparaître dans la session.
-  await page.waitForSelector('text=Ton accueil', { timeout: 15000 })
-  await shoot(page, `12-tuto-${theme}`, 1440, 900)
-  for (let etape = 0; etape < 4; etape += 1) {
-    await page.getByRole('button', { name: 'Suivant' }).click()
-    await page.waitForTimeout(350)
-  }
-  await page.getByRole('button', { name: 'C’est parti !' }).click()
-
-  // La visite enchaîne sur la proposition d'objectif : on la capture puis on
-  // la remet à plus tard pour continuer le parcours.
-  await page.waitForSelector('text=Et maintenant, ton objectif', { timeout: 15000 })
-  await shoot(page, `13-objectif-${theme}`, 1440, 900)
-  await page.getByRole('button', { name: 'Plus tard' }).click()
-  await page.waitForTimeout(400)
+  // « Se connecter » reprend le compte de démonstration : il est déjà rempli,
+  // rien ne s'interpose entre la connexion et l'accueil.
+  await page.waitForTimeout(600)
 
   await shoot(page, `02-accueil-${theme}`, 1440, 1800)
 
@@ -92,13 +78,19 @@ for (const theme of ['light', 'dark']) {
     await shoot(page, `${name}-${theme}`, 1440, 1800)
   }
 
-  // Notification de récompense : on déclenche un défi puis on capture
+  /*
+    Les quêtes ne se cochent plus : elles se mesurent sur la saisie. On se
+    contente donc de capturer l'écran, après avoir vérifié qu'une quête au
+    moins est bien donnée pour gagnée sur le jeu de démonstration — c'est ce
+    qui prouve que la mesure fonctionne.
+  */
   await page.goto(`${file}#/quetes`)
-  await page.waitForTimeout(700)
+  await page.waitForTimeout(900)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.getByText('Journée sans dépense').first().click()
-  await page.waitForTimeout(700)
-  await page.screenshot({ path: `${OUT}/10-notification-${theme}.png` })
+  await page.waitForSelector('text=Quêtes du mois', { timeout: 15000 })
+  const gagnees = await page.locator('svg.lucide-check').count()
+  if (gagnees === 0) errors.push(`[${theme}] aucune quête mesurée comme gagnée sur le jeu de démonstration`)
+  await page.screenshot({ path: `${OUT}/10-quetes-${theme}.png` })
 
   // Vue mobile
   await page.goto(`${file}#/`)
