@@ -94,11 +94,18 @@ Le même code alimente le site et une application Android : Capacitor embarque l
 réécrit, et `domain/` reste intact.
 
 L'APK se récupère **sans rien installer sur son ordinateur** — ni Android Studio, ni SDK, ni
-émulateur. `.github/workflows/apk.yml` le construit sur les serveurs de GitHub, à chaque poussée
-sur `main` et à la demande depuis l'onglet *Actions*. Le fichier est joint au run, sous
-`budgette-apk`, et se garde trente jours.
+émulateur. `.github/workflows/apk.yml` le construit sur les serveurs de GitHub.
 
-Pour l'installer sur un téléphone : télécharger l'APK depuis le téléphone, l'ouvrir, et autoriser
+Le téléchargement passe par la release d'essai, dont l'adresse ne change jamais :
+
+<https://github.com/Oderc95/Budgette/releases/tag/apk-essai>
+
+Elle est refaite à chaque poussée sur `main`. C'est un lien direct, que le navigateur d'un téléphone
+suit sans détour — contrairement aux pièces jointes d'un run, que l'interface mobile de GitHub
+affiche sans les rendre cliquables. L'APK reste aussi joint à chaque run, sous `budgette-apk`, ce
+qui permet d'essayer une proposition de modification avant sa fusion.
+
+Pour l'installer : ouvrir le lien depuis le téléphone, toucher `budgette.apk`, puis autoriser
 l'installation depuis cette source quand Android le demande.
 
 L'APK produit est signé avec la clé de débogage d'Android, commune à tous les projets. Elle suffit

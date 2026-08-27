@@ -4,6 +4,12 @@
 # sur son ordinateur : ni Android Studio, ni SDK, ni émulateur. L'exécuteur de
 # GitHub porte déjà le SDK Android ; il suffit de récupérer le fichier produit.
 #
+# L'APK est publié de deux façons. En pièce jointe du run, ce qui vaut pour
+# toutes les propositions de modification. Et, depuis main, dans une release
+# permanente : c'est le seul des deux qui donne un lien de téléchargement
+# direct — l'interface mobile de GitHub affiche les pièces jointes d'un run
+# sans les rendre cliquables, et un téléphone ne peut donc pas les récupérer.
+#
 # L'APK est signé avec la clé de débogage d'Android, commune à tous les projets.
 # Elle suffit pour installer et essayer l'application, et ne convient à aucune
 # publication : le Play Store exigera une clé de release, créée le moment venu.
@@ -27,8 +33,10 @@ on:
       - '**.md'
       - 'docs/**'
 
+# `write` sert à publier la release depuis main. Les propositions de
+# modification n'y touchent pas : leur étape de publication est ignorée.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   apk:
@@ -62,10 +70,46 @@ jobs:
         run: ./gradlew assembleDebug --no-daemon
         working-directory: android
 
+      # Nom explicite : c'est celui que verra la personne qui l'installe.
+      - name: Renomme l'APK
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk budgette.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: budgette-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: budgette.apk
           if-no-files-found: error
           # Au-delà, l'APK n'a plus d'intérêt : il en existe un plus récent.
           retention-days: 30
+
+      # Release permanente, remplacée à chaque construction depuis main. Son
+      # adresse ne change pas : https://github.com/<dépôt>/releases/tag/apk-essai
+      # Le fichier y est un lien direct, que le navigateur d'un téléphone
+      # télécharge sans détour.
+      - name: Publie la release d'essai
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Supprimer d'abord garde la release à un seul APK, celui du jour, et
+          # rend l'étape rejouable. L'échec est toléré : la première fois, il
+          # n'y a rien à supprimer.
+          gh release delete apk-essai --yes --cleanup-tag || true
+          gh release create apk-essai budgette.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Budgette — version d'essai" \
+            --notes "$(cat <<'TEXTE'
+          APK à installer sur un téléphone Android pour essayer Budgette.
+
+          Touchez `budgette.apk` ci-dessous pour le télécharger. Android
+          demandera d'autoriser l'installation depuis cette source : c'est
+          normal pour une application qui ne vient pas du Play Store.
+
+          Cette version est signée avec la clé de débogage d'Android. Elle sert
+          à essayer l'application, pas à la publier.
+
+          Reconstruite à chaque modification de `main` ; le lien, lui, ne change
+          jamais.
+          TEXTE
+          )"
