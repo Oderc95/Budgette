@@ -49,9 +49,15 @@ elle ne coûtait presque rien à ce stade, et elle permet de juger l'ergonomie s
 sans attendre le reste. Elle ne préempte aucune décision — manifeste, service worker et cibles
 d'appui servent autant un portage Capacitor qu'un portage React Native.
 
-Reste à trancher, et à faire après la phase 5 :
+Le portage Capacitor a été mis en place pour rendre l'application essayable sur un vrai téléphone,
+sous forme d'APK construit par GitHub Actions. C'est un emballage du build web : il n'ajoute aucune
+logique et ne ferme pas la porte à un portage React Native ultérieur.
 
-- [ ] Choix du portage : emballage Capacitor du build web, ou portage React Native
+Reste à faire après la phase 5 :
+
+- [x] Emballage Capacitor du build web, APK construit en intégration continue
+- [ ] Écran de démarrage et icônes affinés pour Android
+- [ ] Clé de signature de release, conservée hors du dépôt
 - [ ] Publication sur le Play Store — compte Google Developer déjà ouvert
 - [ ] Persistance native, en remplacement du stockage du navigateur, pour que le système ne
       puisse pas purger les données sous pression mémoire

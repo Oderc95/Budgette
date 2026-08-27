@@ -1,0 +1,64 @@
+# Construit l'application Android et publie l'APK en pièce jointe du run.
+#
+# Le but est de pouvoir installer Budgette sur un téléphone sans rien installer
+# sur son ordinateur : ni Android Studio, ni SDK, ni émulateur. L'exécuteur de
+# GitHub porte déjà le SDK Android ; il suffit de récupérer le fichier produit.
+#
+# L'APK est signé avec la clé de débogage d'Android, commune à tous les projets.
+# Elle suffit pour installer et essayer l'application, et ne convient à aucune
+# publication : le Play Store exigera une clé de release, créée le moment venu.
+name: Application Android
+
+on:
+  # Lancement à la demande, depuis l'onglet Actions.
+  workflow_dispatch:
+  # Et à chaque poussée sur main, pour qu'un APK à jour soit toujours
+  # disponible sans avoir à y penser.
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # Capacitor compile en Java 21, comme le déclare `capacitor.build.gradle`.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      # Le build web d'abord : `cap sync` recopie `dist/` dans le projet Android.
+      - name: Build web
+        run: npm run build
+
+      - name: Synchronise le projet Android
+        run: npx cap sync android
+
+      - name: Construit l'APK
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: budgette-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          # Au-delà, l'APK n'a plus d'intérêt : il en existe un plus récent.
+          retention-days: 30
