@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type {
+  ChallengeCadence,
   ChallengeProgress,
   Friend,
   Goal,
@@ -26,25 +27,23 @@ import {
   MOCK_TAGS,
   MOCK_UNLOCKED,
 } from '../data/mock'
-import { CHALLENGE_BY_ID } from '../domain/challenges'
+import { CHALLENGES, estReussie, mesurer } from '../domain/challenges'
 import { pocketCategoryId } from '../domain/budget'
 import { CATEGORY_BY_ID } from '../domain/categories'
-import { addMonths, dayKey, monthKey, weekKey } from '../lib/format'
-import { streakMultiplier } from '../domain/gamification'
+import { addMonths, monthKey } from '../lib/format'
 
 export type ThemeChoice = 'system' | 'light' | 'dark'
 
 /** Période courante d'un défi, selon sa cadence. */
-export function periodFor(cadence: string, now = new Date()): string {
+/** Période à laquelle une quête est rattachée, pour le mois affiché. */
+export function periodFor(cadence: ChallengeCadence, month: MonthKey): string {
   switch (cadence) {
-    case 'daily':
-      return dayKey(now)
-    case 'weekly':
-      return weekKey(now)
+    case 'unique':
+      return 'once'
     case 'monthly':
-      return monthKey(now)
+      return month
     default:
-      return String(now.getFullYear())
+      return month.slice(0, 4)
   }
 }
 
@@ -70,10 +69,6 @@ interface AppState {
   toasts: Toast[]
   /** Mois affiché dans les écrans de saisie et de synthèse. */
   activeMonth: MonthKey
-  /** Visite guidée : montrée une seule fois, à la première arrivée. */
-  tourDone: boolean
-  /** Après la visite : proposer de définir son objectif, une seule fois. */
-  goalPromptPending: boolean
   /** Étiquettes libres, collées sur des lignes de saisie. */
   tags: Tag[]
   /**
@@ -102,7 +97,12 @@ interface AppState {
   ensureMonth: (month: MonthKey) => void
   closeMonth: (month: MonthKey, mood: 1 | 2 | 3 | 4 | 5, note?: string) => void
   reopenMonth: (month: MonthKey) => void
-  toggleChallenge: (challengeId: string) => void
+  /**
+   * Recalcule les quêtes depuis les données et crédite celles qui viennent
+   * d'être réussies. Rejouable sans effet de bord : le registre des quêtes
+   * déjà créditées empêche de payer deux fois.
+   */
+  syncQuetes: () => void
   setStrategy: (strategyId: string) => void
   addGoal: (goal: Goal) => void
   removeGoal: (goalId: string) => void
@@ -127,13 +127,11 @@ interface AppState {
   removeGroupMember: (groupId: string, memberId: string) => void
   leaveGroup: (groupId: string) => void
   contributeToGroup: (groupId: string, month: MonthKey, amount: number) => void
-  dismissGoalPrompt: () => void
   addPlanned: (item: PlannedItem) => void
   removePlanned: (id: string) => void
   grantXp: (amount: number, reason: string) => void
   pushToast: (toast: Omit<Toast, 'id'>) => void
   dismissToast: (id: number) => void
-  completeTour: () => void
   resetDemo: () => void
 }
 
@@ -149,8 +147,6 @@ const initial = () => ({
   theme: 'system' as ThemeChoice,
   toasts: [] as Toast[],
   activeMonth: latestMonth(MOCK_BUDGETS),
-  tourDone: false,
-  goalPromptPending: false,
   tags: MOCK_TAGS,
   // Le dernier mois clôturé du jeu de démonstration sert de référence.
   referenceMonth: '2026-07' as MonthKey | null,
@@ -195,10 +191,6 @@ function vierge() {
     groups: [] as Group[],
     activeMonth: mois,
     referenceMonth: null as MonthKey | null,
-    // La visite guidée est remplacée par le questionnaire d'arrivée, qui
-    // apprend quelque chose de la personne au lieu de lui montrer des flèches.
-    tourDone: true,
-    goalPromptPending: false,
   }
 }
 
@@ -345,7 +337,7 @@ export const useApp = create<AppState>()(
           get().ensureMonth(suivant)
           get().setLine(suivant, 'inc_carryover', Math.round(reste))
         }
-        get().grantXp(CHALLENGE_BY_ID.m_close.xp, 'Mois clôturé')
+        get().syncQuetes()
       },
 
       reopenMonth: (month) =>
@@ -355,41 +347,88 @@ export const useApp = create<AppState>()(
           ),
         })),
 
-      toggleChallenge: (challengeId) => {
-        const challenge = CHALLENGE_BY_ID[challengeId]
-        if (!challenge) return
-        const period = periodFor(challenge.cadence)
-        const existing = get().challengeProgress.find(
-          (p) => p.challengeId === challengeId && p.period === period,
-        )
-        const nowCompleted = !existing?.completed
+      syncQuetes: () => {
+        const state = get()
+        const { budgets, pockets, goals } = state
 
-        set((state) => {
-          const others = state.challengeProgress.filter(
-            (p) => !(p.challengeId === challengeId && p.period === period),
-          )
-          return {
-            challengeProgress: [
-              ...others,
-              {
-                challengeId,
+        /*
+         * Périodes à examiner. Une quête ponctuelle ne se joue qu'une fois ;
+         * une quête mensuelle se rejoue à chaque mois saisi ; une quête
+         * annuelle, à chaque année représentée. On ne parcourt que ce qui
+         * existe : un compte neuf ne fait donc presque rien ici.
+         */
+        const mois = budgets.map((b) => b.month).sort()
+        const annees = [...new Set(mois.map((m) => m.slice(0, 4)))]
+
+        const nouvelles: { challengeId: string; period: string; xp: number; titre: string }[] = []
+
+        for (const challenge of CHALLENGES) {
+          const periodes =
+            challenge.cadence === 'unique'
+              ? ['once']
+              : challenge.cadence === 'monthly'
+                ? mois
+                : annees
+
+          for (const period of periodes) {
+            const dejaCredite = state.challengeProgress.some(
+              (p) => p.challengeId === challenge.id && p.period === period && p.completed,
+            )
+            if (dejaCredite) continue
+
+            // Le mois de mesure : la période elle-même pour une quête
+            // mensuelle, le premier mois de l'année pour une quête annuelle,
+            // le mois courant pour une quête ponctuelle.
+            const moisMesure =
+              challenge.cadence === 'monthly'
+                ? period
+                : challenge.cadence === 'yearly'
+                  ? (mois.find((m) => m.startsWith(period)) ?? state.activeMonth)
+                  : state.activeMonth
+
+            const ctx = { budgets, month: moisMesure, pockets, goals }
+            if (estReussie(challenge, mesurer(challenge, ctx), ctx)) {
+              nouvelles.push({
+                challengeId: challenge.id,
                 period,
-                value: nowCompleted ? challenge.target : 0,
-                completed: nowCompleted,
-                completedAt: nowCompleted ? new Date().toISOString() : undefined,
-              },
-            ],
+                xp: challenge.xp,
+                titre: challenge.title,
+              })
+            }
           }
-        })
-
-        if (nowCompleted) {
-          const multiplier = streakMultiplier(get().profile.streak.current)
-          get().grantXp(Math.round(challenge.xp * multiplier), challenge.title)
-        } else {
-          set((state) => ({
-            profile: { ...state.profile, xp: Math.max(0, state.profile.xp - challenge.xp) },
-          }))
         }
+
+        if (nouvelles.length === 0) return
+
+        const gain = nouvelles.reduce((total, n) => total + n.xp, 0)
+        set((current) => ({
+          challengeProgress: [
+            ...current.challengeProgress,
+            ...nouvelles.map((n) => ({
+              challengeId: n.challengeId,
+              period: n.period,
+              value: 1,
+              completed: true,
+              completedAt: new Date().toISOString(),
+            })),
+          ],
+          profile: { ...current.profile, xp: current.profile.xp + gain },
+          /*
+           * Une seule notification, même quand plusieurs quêtes tombent
+           * ensemble : la première saisie en valide quatre d'un coup, et
+           * quatre bulles empilées noieraient le message.
+           */
+          toasts: [
+            ...current.toasts,
+            {
+              id: Date.now(),
+              title: nouvelles.length === 1 ? nouvelles[0].titre : `${nouvelles.length} quêtes validées`,
+              body: `+${gain} XP`,
+              tone: 'amber' as const,
+              icon: 'Trophy',
+            },
+          ],
+        }))
       },
 
       setStrategy: (strategyId) =>
@@ -463,15 +502,11 @@ export const useApp = create<AppState>()(
       acceptFriend: (friendId) =>
         set((state) => ({
           friends: state.friends.map((f) => (f.id === friendId ? { ...f, status: 'ami' } : f)),
-          // Se rattacher à quelqu'un sans objectif propre : on propose d'en
-          // définir un, comme à la fin de la visite guidée.
-          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
         })),
 
       createGroup: (group) => {
         set((state) => ({
           groups: [...state.groups, group],
-          goalPromptPending: state.goalPromptPending || state.goals.length === 0,
         }))
         get().pushToast({ title: 'Groupe créé !', detail: group.name, tone: 'indigo', icon: 'Users' })
       },
@@ -512,12 +547,8 @@ export const useApp = create<AppState>()(
           }),
         })),
 
-      dismissGoalPrompt: () => set({ goalPromptPending: false }),
-
       addPlanned: (item) => set((state) => ({ planned: [...state.planned, item] })),
       removePlanned: (id) => set((state) => ({ planned: state.planned.filter((p) => p.id !== id) })),
-
-      completeTour: () => set({ tourDone: true }),
 
       resetDemo: () => set({ ...initial(), authenticated: true }),
     }),
@@ -544,8 +575,16 @@ export function useBudget(month: MonthKey): MonthBudget | undefined {
   return useApp((s) => s.budgets.find((b) => b.month === month))
 }
 
+/**
+ * État enregistré d'une quête sur le mois affiché.
+ *
+ * Il dit seulement si la quête a déjà été créditée en expérience. L'affichage,
+ * lui, se fonde sur la mesure en direct : une quête peut redevenir non
+ * atteinte si l'utilisateur corrige sa saisie, sans qu'on lui reprenne l'XP.
+ */
 export function useChallengeState(challengeId: string): ChallengeProgress | undefined {
-  const challenge = CHALLENGE_BY_ID[challengeId]
-  const period = challenge ? periodFor(challenge.cadence) : ''
+  const challenge = CHALLENGES.find((c) => c.id === challengeId)
+  const month = useApp((s) => s.activeMonth)
+  const period = challenge ? periodFor(challenge.cadence, month) : ''
   return useApp((s) => s.challengeProgress.find((p) => p.challengeId === challengeId && p.period === period))
 }

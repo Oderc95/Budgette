@@ -37,7 +37,9 @@ export function Dashboard() {
   const upcoming = nextStage(level.level)
   const strategy = STRATEGY_BY_ID[profile.strategyId]
 
-  const dailies = CHALLENGES.filter((c) => c.cadence === 'daily').slice(0, 4)
+  // Les quêtes du mois, celles qui se rejouent : ce sont les seules qui
+  // appellent une action maintenant.
+  const dailies = CHALLENGES.filter((c) => c.cadence === 'monthly').slice(0, 4)
   const topSpending = [
     ...breakdown(budget, 'discretionary'),
     ...breakdown(budget, 'fixed'),

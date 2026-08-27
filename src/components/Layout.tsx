@@ -5,8 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../store/useApp'
 import { Icon } from './Icon'
 import { Toaster } from './Toaster'
-import { Tour } from './Tour'
-import { GoalPrompt } from './GoalPrompt'
 import { levelFromXp, stageForLevel, GROWTH_STAGES, seasonForMonth } from '../domain/gamification'
 import { Ambient, Progress } from './ui/primitives'
 import { Logo } from './Logo'
@@ -184,9 +182,21 @@ export function Layout() {
 
   const budgets = useApp((s) => s.budgets)
   const goals = useApp((s) => s.goals)
+  const pockets = useApp((s) => s.pockets)
   const profile = useApp((s) => s.profile)
   const activeMonth = useApp((s) => s.activeMonth)
   const ouvertes = sectionsOuvertes({ budgets, goals, profile, activeMonth })
+
+  /*
+   * Les quêtes se recalculent après chaque changement de données, où qu'il
+   * ait eu lieu. Le faire ici plutôt que dans chaque action du magasin évite
+   * d'oublier un chemin : toute modification finit par repasser par un rendu
+   * de la mise en page.
+   */
+  const syncQuetes = useApp((s) => s.syncQuetes)
+  useEffect(() => {
+    syncQuetes()
+  }, [budgets, goals, pockets, syncQuetes])
   const reclame = objectifManquant({ goals })
 
   const visibles = NAV.filter((item) => ouvertes.has(item.section))
@@ -374,8 +384,6 @@ export function Layout() {
         </nav>
       </div>
 
-      <Tour />
-      <GoalPrompt />
       <Toaster />
       </div>
     </>

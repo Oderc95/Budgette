@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useCascade } from '../lib/useCascade'
 import clsx from 'clsx'
 import { useApp } from '../store/useApp'
-import { CHALLENGES } from '../domain/challenges'
+import { CHALLENGES, estReussie, mesurer } from '../domain/challenges'
 import { CADENCE_META, levelFromXp, seasonForMonth, streakMultiplier } from '../domain/gamification'
 import { STRATEGY_BY_ID } from '../domain/strategy'
 import { ChallengeCard } from '../components/ChallengeCard'
@@ -11,12 +11,16 @@ import { Icon } from '../components/Icon'
 import { monthKey } from '../lib/format'
 import type { ChallengeCadence } from '../domain/types'
 
-const CADENCES: ChallengeCadence[] = ['daily', 'weekly', 'monthly', 'yearly']
+const CADENCES: ChallengeCadence[] = ['unique', 'monthly', 'yearly']
 
 export function Quests() {
   const profile = useApp((s) => s.profile)
-  const progress = useApp((s) => s.challengeProgress)
-  const [cadence, setCadence] = useState<ChallengeCadence>('daily')
+  const budgets = useApp((s) => s.budgets)
+  const pockets = useApp((s) => s.pockets)
+  const goals = useApp((s) => s.goals)
+  const month = useApp((s) => s.activeMonth)
+  const ctx = { budgets, month, pockets, goals }
+  const [cadence, setCadence] = useState<ChallengeCadence>('monthly')
   // Les cartes de défis tombent en cascade à chaque changement de cadence.
   const listeRef = useCascade<HTMLDivElement>('.group', [cadence])
 
@@ -26,24 +30,31 @@ export function Quests() {
   const strategy = STRATEGY_BY_ID[profile.strategyId]
   const featured = new Set(strategy?.featuredChallenges ?? [])
 
+  /*
+   * Ordre d'affichage : ce qui reste à faire d'abord, en commençant par les
+   * quêtes que la stratégie met en avant. Les quêtes déjà gagnées descendent :
+   * elles ne demandent plus rien.
+   */
   const list = CHALLENGES.filter((c) => c.cadence === cadence).sort((a, b) => {
-    const aFeatured = featured.has(a.id) ? 0 : 1
-    const bFeatured = featured.has(b.id) ? 0 : 1
-    return aFeatured - bFeatured || a.xp - b.xp
+    const aFait = estReussie(a, mesurer(a, ctx), ctx) ? 1 : 0
+    const bFait = estReussie(b, mesurer(b, ctx), ctx) ? 1 : 0
+    const aMisEnAvant = featured.has(a.id) ? 0 : 1
+    const bMisEnAvant = featured.has(b.id) ? 0 : 1
+    return aFait - bFait || aMisEnAvant - bMisEnAvant || a.xp - b.xp
   })
 
+  // Le compteur relit la mesure : il ne peut pas afficher « 3/5 » alors que
+  // les cartes en dessous en montrent deux de gagnées.
   const completedCount = (target: ChallengeCadence) =>
-    CHALLENGES.filter((c) => c.cadence === target).filter((c) =>
-      progress.some((p) => p.challengeId === c.id && p.completed),
-    ).length
+    CHALLENGES.filter((c) => c.cadence === target).filter((c) => estReussie(c, mesurer(c, ctx), ctx)).length
 
   return (
     <div className="flex flex-col gap-5">
       <header>
         <p className="eyebrow">Quêtes</p>
-        <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Ce que vous pouvez tenter</h1>
+        <h1 className="mt-1 font-display text-[2rem] leading-tight text-ink">Ce que votre saisie débloque</h1>
         <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-ink-soft">
-          Un défi tenu = de l’XP pour votre jardin. La série multiplie les gains.
+          Chaque quête se mesure sur les chiffres du mois. Rien à cocher : saisissez, elles se valident.
         </p>
       </header>
 
@@ -123,15 +134,15 @@ export function Quests() {
         <ul className="flex flex-col gap-2.5 px-5 pb-5 text-[0.85rem] leading-relaxed text-ink-soft">
           <li className="flex gap-2">
             <Icon name="Check" size={15} className="mt-0.5 shrink-0 text-mint" />
-            Les défis se déclarent sur l’honneur : personne ne vérifie à votre place, et c’est volontaire.
+            Rien ne se coche à la main : chaque quête se lit dans votre saisie du mois, et se valide toute seule.
           </li>
           <li className="flex gap-2">
             <Icon name="Check" size={15} className="mt-0.5 shrink-0 text-mint" />
-            Une série de 7 jours multiplie les gains par 1,1 ; 14 jours par 1,25 ; 30 jours par 1,5 ; 90 jours par 2.
+            Corriger une saisie peut faire retomber une quête sous son seuil. L’expérience déjà gagnée, elle, reste acquise.
           </li>
           <li className="flex gap-2">
             <Icon name="Check" size={15} className="mt-0.5 shrink-0 text-mint" />
-            Rater un défi ne retire jamais d’expérience. On ne construit pas une habitude avec une punition.
+            Manquer une quête ne retire jamais d’expérience. On ne construit pas une habitude avec une punition.
           </li>
         </ul>
       </Card>

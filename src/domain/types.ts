@@ -161,7 +161,12 @@ export interface Strategy {
 
 /* ------------------------------ Gamification ------------------------------ */
 
-export type ChallengeCadence = 'daily' | 'weekly' | 'monthly' | 'yearly'
+/**
+ * Rythme d'une quête. Ni quotidien ni hebdomadaire : la saisie est mensuelle,
+ * elle ne peut rien attester d'une journée. `unique` désigne ce qui ne se joue
+ * qu'une fois, à la découverte de l'application.
+ */
+export type ChallengeCadence = 'unique' | 'monthly' | 'yearly'
 export type ChallengeDifficulty = 'douce' | 'moyenne' | 'costaude' | 'héroïque'
 
 export interface Challenge {

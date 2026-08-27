@@ -1,15 +1,20 @@
-import { useState } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import type { Challenge } from '../domain/types'
-import { useApp, useChallengeState } from '../store/useApp'
-import { burst } from '../lib/wow'
-import { Confetti } from './Confetti'
+import { useApp } from '../store/useApp'
+import { avancement, estReussie, mesurer } from '../domain/challenges'
 import { Icon } from './Icon'
 import { TONE } from './ui/tone'
-import { DIFFICULTY_META, streakMultiplier } from '../domain/gamification'
+import { DIFFICULTY_META } from '../domain/gamification'
 
-/** Carte de défi, cochable. La progression partielle reste visible. */
+/**
+ * Carte de quête.
+ *
+ * Elle n'est plus cochable. Une quête se gagne en saisissant son mois, pas en
+ * déclarant l'avoir gagnée : l'application mesure, affiche l'écart au but, et
+ * crédite l'expérience d'elle-même. Ce qui s'affiche ici est donc toujours le
+ * reflet des chiffres, jamais une intention.
+ */
 export function ChallengeCard({
   challenge,
   compact = false,
@@ -19,110 +24,81 @@ export function ChallengeCard({
   compact?: boolean
   featured?: boolean
 }) {
-  const progress = useChallengeState(challenge.id)
-  const toggle = useApp((s) => s.toggleChallenge)
-  const streak = useApp((s) => s.profile.streak.current)
-  const done = progress?.completed ?? false
-  const value = progress?.value ?? 0
-  const ratio = Math.min(1, value / challenge.target)
-  const multiplier = streakMultiplier(streak)
+  const budgets = useApp((s) => s.budgets)
+  const pockets = useApp((s) => s.pockets)
+  const goals = useApp((s) => s.goals)
+  const month = useApp((s) => s.activeMonth)
+
+  const ctx = { budgets, month, pockets, goals }
+  const valeur = mesurer(challenge, ctx)
+  const done = estReussie(challenge, valeur, ctx)
+  const ratio = avancement(challenge, valeur, ctx)
   const tone = TONE[challenge.tone]
-  // Compte les validations pour rejouer les confettis à chacune : la clé
-  // change, le composant se remonte, la pluie repart.
-  const [fete, setFete] = useState(0)
 
   return (
-    <motion.button
-      type="button"
-      onClick={(event) => {
-        if (!done) {
-          setFete((f) => f + 1)
-          burst(event.currentTarget, [challenge.tone, 'amber', 'mint'])
-        }
-        toggle(challenge.id)
-      }}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 24 }}
-      aria-pressed={done}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 26 }}
       className={clsx(
-        'group relative flex w-full items-start gap-3 overflow-hidden rounded-2xl border p-4 text-left transition',
-        done ? clsx(tone.bg, tone.border) : 'border-line bg-surface hover:border-line-strong hover:bg-surface-2',
-        featured && !done && 'border-brand/40 ring-1 ring-brand/20',
+        'group relative flex w-full items-start gap-3 overflow-hidden rounded-2xl border p-4 text-left',
+        done ? clsx(tone.bg, tone.border) : 'border-line bg-surface',
       )}
     >
-      {fete > 0 && done && <Confetti key={fete} count={16} />}
-      <motion.span
-        key={done ? 'done' : 'todo'}
+      <span
         className={clsx(
-          'grid size-10 shrink-0 place-items-center rounded-xl transition-colors',
-          done ? clsx(tone.solid, 'text-on-accent') : clsx(tone.bg, tone.deep),
+          'grid size-10 shrink-0 place-items-center rounded-xl transition',
+          done ? clsx('bg-surface', tone.deep) : 'bg-surface-2 text-ink-muted',
         )}
-        initial={{ scale: 0.6, rotate: done ? -30 : 0 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 480, damping: 13 }}
       >
         <Icon name={done ? 'Check' : challenge.icon} size={19} />
-      </motion.span>
+      </span>
 
-      <span className="min-w-0 flex-1">
-        <span className="flex items-start justify-between gap-2">
-          <span
-            className={clsx(
-              'flex items-center gap-1.5 font-display text-[1rem] leading-tight transition',
-              done ? tone.deep : 'text-ink',
-            )}
-          >
-            {featured && !done && (
-              <Icon name="Sparkles" size={14} className="shrink-0 text-brand" aria-label="Recommandé par votre stratégie" />
-            )}
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2">
+          <span className={clsx('text-[0.92rem] font-semibold leading-tight', done ? tone.deep : 'text-ink')}>
             {challenge.title}
           </span>
-          <span
-            className={clsx(
-              'tabular chip shrink-0 transition-colors',
-              done ? 'bg-amber-soft text-amber-deep' : 'bg-surface-2 text-ink-muted',
-            )}
-          >
-            +{Math.round(challenge.xp * (done ? 1 : multiplier))} XP
-          </span>
-        </span>
+          {featured && !done && (
+            <span className="chip bg-brand-soft text-brand-deep">Conseillée</span>
+          )}
+        </p>
 
         {!compact && (
-          <span className="mt-1 block text-[0.82rem] leading-snug text-ink-muted">{challenge.description}</span>
+          <p className="mt-1 text-[0.8rem] leading-snug text-ink-muted">{challenge.description}</p>
         )}
 
-        <span className="mt-2.5 flex items-center gap-3">
-          <span className="flex items-center gap-1" aria-label={`Difficulté ${DIFFICULTY_META[challenge.difficulty].label}`}>
-            {Array.from({ length: 4 }).map((_, index) => (
-              <span
-                key={index}
-                className={clsx(
-                  'size-1.5 rounded-full',
-                  index < DIFFICULTY_META[challenge.difficulty].dots ? tone.solid : 'bg-surface-3',
-                )}
-              />
-            ))}
-          </span>
-          <span className="text-[0.72rem] text-ink-muted">{DIFFICULTY_META[challenge.difficulty].label}</span>
-          {challenge.target > 1 && (
-            <span className="tabular ml-auto text-[0.72rem] font-semibold text-ink-soft">
-              {Math.round(value * 10) / 10} / {challenge.target} {challenge.unit}
-            </span>
-          )}
-        </span>
-
-        {challenge.target > 1 && (
-          <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
+        {/* Mesure : la valeur relevée, face à la cible. */}
+        <div className="mt-2.5">
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
             <motion.span
-              className={clsx('block h-full rounded-full', tone.solid)}
+              className={clsx('block h-full rounded-full', done ? tone.solid : 'bg-line-strong')}
               initial={{ width: 0 }}
               animate={{ width: `${ratio * 100}%` }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             />
-          </span>
-        )}
-      </span>
-    </motion.button>
+          </div>
+          <p className="tabular mt-1.5 flex items-center justify-between text-[0.72rem] text-ink-muted">
+            <span>
+              {valeur} / {challenge.target} {challenge.unit}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="flex items-center gap-0.5" title={DIFFICULTY_META[challenge.difficulty].label}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <span
+                    key={index}
+                    className={clsx(
+                      'block size-1 rounded-full',
+                      index < DIFFICULTY_META[challenge.difficulty].dots ? 'bg-ink-muted' : 'bg-line',
+                    )}
+                  />
+                ))}
+              </span>
+              <span className={done ? tone.deep : undefined}>+{challenge.xp} XP</span>
+            </span>
+          </p>
+        </div>
+      </div>
+    </motion.div>
   )
 }
