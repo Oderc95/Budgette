@@ -8,6 +8,7 @@ import {
   Repeat, RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
   Snowflake, Sparkles, Split, Sprout, Sun, Target, Telescope, Terminal, Ticket, TramFront, TrendingDown,
   Search, Tag, TrendingUp, Trophy, Umbrella, Undo2, UserPlus, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
+  AlertCircle, Award, BarChart3, ClipboardList, Coins, Eye, EyeOff, Lightbulb, Sparkle,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
@@ -27,6 +28,7 @@ const REGISTRY: Record<string, ComponentType<{ size?: number; strokeWidth?: numb
   Repeat, RotateCcw, Scale, Scissors, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingBasket, Smartphone,
   Snowflake, Sparkles, Split, Sprout, Sun, Target, Telescope, Terminal, Ticket, TramFront, TrendingDown,
   Search, Tag, TrendingUp, Trophy, Umbrella, Undo2, UserPlus, Users, Utensils, Wallet, Wheat, Wifi, X, Zap,
+  AlertCircle, Award, BarChart3, ClipboardList, Coins, Eye, EyeOff, Lightbulb, Sparkle,
 }
 
 export function Icon({
