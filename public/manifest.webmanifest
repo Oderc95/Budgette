@@ -1,0 +1,49 @@
+{
+  "name": "Budgette — coach budgétaire",
+  "short_name": "Budgette",
+  "description": "Un coach budgétaire ludique : objectifs, défis et progression, en français.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "budgette",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6e9d8",
+  "theme_color": "#f6e9d8",
+  "categories": ["finance", "productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "./icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icone-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Saisir mon mois",
+      "short_name": "Mon mois",
+      "url": "./#/mois",
+      "icons": [{ "src": "./icone-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Mes quêtes",
+      "short_name": "Quêtes",
+      "url": "./#/quetes",
+      "icons": [{ "src": "./icone-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

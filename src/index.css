@@ -279,6 +279,76 @@
   input[type='range'] {
     accent-color: var(--c-brand);
   }
+
+  /*
+    Confort tactile. Ces règles ne visent que les pointeurs grossiers : sur un
+    écran piloté à la souris, la densité d'origine est conservée.
+  */
+  @media (pointer: coarse) {
+    /*
+      Sous seize pixels, iOS zoome sur le champ dès la mise au point et ne
+      revient jamais en arrière : la page reste décalée pour le reste de la
+      session. Les champs de l'application sont écrits en 0,9 rem, d'où ce
+      plancher posé une fois pour toutes plutôt qu'à chaque appel.
+    */
+    input,
+    select,
+    textarea {
+      font-size: max(1rem, 1em);
+    }
+
+    /*
+      Cible d'appui d'au moins 44 px, la valeur retenue par iOS comme par
+      Android. `min-height` seul suffit : la largeur des boutons de
+      l'application vient du texte ou d'une taille carrée déjà conforme.
+    */
+    button,
+    select,
+    [role='button'],
+    a[href],
+    input:not([type='range']):not([type='checkbox']):not([type='radio']) {
+      min-height: 44px;
+    }
+
+    /*
+      Les onglets et les liens de navigation sont des blocs entiers : leur
+      hauteur vient de leur contenu, et la contrainte ci-dessus les étirerait
+      sans raison. Ils dépassent déjà largement le seuil.
+    */
+    nav a[href] {
+      min-height: 0;
+    }
+
+    /*
+      Les curseurs sont exclus de la règle ci-dessus : `min-height` déforme
+      leur piste. C'est `height` qui leur donne une zone d'attrape, la piste
+      restant centrée dedans.
+    */
+    input[type='range'] {
+      height: 44px;
+    }
+  }
+
+  /*
+    Le voile gris que WebKit peint sur chaque élément touché double les
+    animations d'appui de l'application. La mise au point reste visible, elle
+    passe par `:focus-visible`.
+  */
+  button,
+  a,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /*
+    Sans cela, un balayage vertical arrivé en bout de liste tire la page
+    entière : rebond élastique sur iOS, rechargement sur Android. Une
+    application installée ne doit ni l'un ni l'autre.
+  */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
 }
 
 @layer components {
@@ -440,6 +510,36 @@
 
     .above-tabbar {
       bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  /*
+    Étend la zone d'appui d'une commande sans toucher à son dessin.
+
+    Certaines commandes sont volontairement minuscules — la croix qui supprime
+    une ligne de la grille annuelle mesure vingt pixels, et l'agrandir ferait
+    éclater la grille. Un pseudo-élément transparent déborde alors de
+    l'élément et capte l'appui à sa place.
+
+    Le débord est vertical et vers la fin de ligne, jamais vers le début : à
+    gauche se trouve le contenu de la ligne, et une commande destructrice ne
+    doit pas capter un appui visant son voisin. La classe s'applique donc à
+    une commande placée en fin de ligne. Sans effet au pointeur fin, où viser
+    vingt pixels ne pose aucun problème.
+  */
+  .zone-appui {
+    position: relative;
+  }
+
+  @media (pointer: coarse) {
+    .zone-appui::before {
+      content: '';
+      position: absolute;
+      /* Douze pixels au-dessus et au-dessous portent la hauteur à 44 px. */
+      top: -12px;
+      bottom: -12px;
+      left: 0;
+      right: -8px;
     }
   }
 

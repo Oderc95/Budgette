@@ -174,7 +174,10 @@ export function SignIn() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
-                  className="absolute inset-y-0 right-3 grid place-items-center text-ink-muted hover:text-ink"
+                  // La zone d'appui fait la hauteur du champ et onze pixels de
+                  // marge de chaque côté de l'icône : au doigt, seize pixels de
+                  // large ne se visent pas.
+                  className="absolute inset-y-0 right-0 grid w-11 place-items-center text-ink-muted hover:text-ink"
                   aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
                   <Icon name={showPassword ? 'Lock' : 'Info'} size={16} />

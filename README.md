@@ -50,8 +50,9 @@ Le détail figure dans [`docs/securite-et-conformite.md`](docs/securite-et-confo
 npm install
 npm run dev          # serveur de développement
 npm run typecheck    # vérification des types
-npm run build        # SPA prêt à héberger, dans dist/
+npm run build        # SPA prêt à héberger, dans dist/, service worker compris
 npm run build:artifact  # fichier HTML autonome, dans dist-artifact/
+npm run icones       # régénère les icônes depuis public/favicon.svg
 node scripts/smoke.mjs  # parcours des écrans, captures, contrôle du responsive
 node scripts/verifier-donnees.mjs  # cohérence du jeu de démonstration
 ```
@@ -66,6 +67,25 @@ Le routage passe par `HashRouter` et les assets par `base: './'`, donc aucune r�
 demandée à l'hébergeur : les fichiers de `dist/` suffisent tels quels.
 
 Pour activer la publication une première fois : **Settings → Pages → Source : GitHub Actions**.
+
+## Application installable
+
+Le site publié s'installe sur l'écran d'accueil d'un téléphone, sous son icône et sans barre
+d'adresse, et démarre ensuite sans réseau.
+
+- **Sur Android**, Chrome propose l'installation depuis son menu (⋮ → *Installer l'application*).
+- **Sur iOS**, elle passe par Safari : *Partager* → *Sur l'écran d'accueil*.
+
+Trois pièces le permettent. [`public/manifest.webmanifest`](public/manifest.webmanifest) déclare le
+nom, les couleurs et les icônes. [`scripts/service-worker.mjs`](scripts/service-worker.mjs) engendre
+`dist/sw.js` après chaque build : il précharge la coquille de l'application et la sert depuis le
+cache, ce qui rend le démarrage hors ligne immédiat. [`src/lib/pwa.ts`](src/lib/pwa.ts) l'enregistre,
+uniquement en production — en développement, un cache prendrait la place du serveur de Vite.
+
+Le service worker est versionné par l'empreinte du contenu du build : une nouvelle version installe
+son propre cache et efface le précédent. Rien n'est donc à purger à la main lors d'un déploiement.
+
+Les données restent dans le navigateur, comme avant : l'installation ne change pas où elles vivent.
 
 ## Architecture
 
