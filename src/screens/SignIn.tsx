@@ -124,20 +124,23 @@ export function SignIn() {
       </div>
 
       {/* Colonne de connexion */}
-      <div className="flex items-center justify-center px-5 py-10">
-        <motion.div className="w-full max-w-sm" variants={scene} initial="hidden" animate="visible">
-          {/* La marque accueille : centrée, le nom sous le symbole. */}
+      {/*
+        `min-h-dvh` et non `h-dvh` : sur un très petit écran, ou clavier ouvert,
+        le contenu doit pouvoir déborder plutôt que d'être rogné. Sur un
+        téléphone ordinaire, tout tient sans défilement.
+      */}
+      <div className="pad-safe-top pad-safe-x flex min-h-dvh flex-col justify-center gap-7 px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <motion.div className="mx-auto w-full max-w-sm" variants={scene} initial="hidden" animate="visible">
           <motion.div variants={piece}>
-            <Logo size="xl" layout="column" className="mb-9" draw />
+            <Logo size="lg" layout="column" className="mb-6" draw />
           </motion.div>
 
           <motion.div variants={piece} className="text-center">
             <TitreAnime texte="Content de vous revoir" />
-            <p className="mt-1.5 text-[0.9rem] text-ink-muted">Reprenons là où vous en étiez.</p>
           </motion.div>
 
           <form
-            className="mt-7 flex flex-col gap-4"
+            className="mt-6 flex flex-col gap-3"
             onSubmit={(event) => {
               event.preventDefault()
               signIn()
@@ -151,17 +154,12 @@ export function SignIn() {
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
                 required
-                className="rounded-xl border border-line bg-surface px-4 py-3 text-[0.9rem] text-ink outline-none transition focus:border-brand"
+                className="rounded-xl border border-line bg-surface px-4 py-3 text-ink outline-none transition focus:border-brand"
               />
             </motion.label>
 
             <motion.label variants={piece} className="flex flex-col gap-1.5">
-              <span className="flex items-center justify-between text-[0.8rem] font-semibold text-ink-soft">
-                Mot de passe
-                <button type="button" className="text-[0.75rem] font-medium text-brand-deep underline-offset-2 hover:underline">
-                  Oublié ?
-                </button>
-              </span>
+              <span className="text-[0.8rem] font-semibold text-ink-soft">Mot de passe</span>
               <span className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -169,52 +167,42 @@ export function SignIn() {
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="current-password"
                   required
-                  className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-11 text-[0.9rem] text-ink outline-none transition focus:border-brand"
+                  className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-12 text-ink outline-none transition focus:border-brand"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
-                  // La zone d'appui fait la hauteur du champ et onze pixels de
-                  // marge de chaque côté de l'icône : au doigt, seize pixels de
-                  // large ne se visent pas.
                   className="absolute inset-y-0 right-0 grid w-11 place-items-center text-ink-muted hover:text-ink"
                   aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
-                  <Icon name={showPassword ? 'Lock' : 'Info'} size={16} />
+                  <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={17} />
                 </button>
               </span>
             </motion.label>
 
-            <motion.div variants={piece}>
+            <motion.div variants={piece} className="mt-2 flex flex-col gap-2.5">
               <Button type="submit" size="lg" full iconRight="ArrowRight">
                 Se connecter
               </Button>
-            </motion.div>
-
-            <motion.div variants={piece} className="flex items-center gap-3 py-1">
-              <span className="h-px flex-1 bg-line" />
-              <span className="text-[0.72rem] uppercase tracking-widest text-ink-muted">ou</span>
-              <span className="h-px flex-1 bg-line" />
-            </motion.div>
-
-            <motion.div variants={piece}>
-              <Button type="button" variant="outline" size="lg" full icon="Plus" onClick={signIn}>
+              <Button type="button" variant="ghost" size="md" full onClick={signIn}>
                 Créer un compte
               </Button>
             </motion.div>
           </form>
-
-          <motion.div variants={piece} className="mt-7 rounded-2xl border border-line bg-surface-2 p-4">
-            <p className="flex items-center gap-2 text-[0.8rem] font-semibold text-ink">
-              <Icon name="ShieldCheck" size={15} className="text-mint" />
-              Prototype — aucune donnée réelle
-            </p>
-            <p className="mt-1.5 text-[0.78rem] leading-snug text-ink-muted">
-              Cette version sert à valider l’interface. La connexion est simulée : la vraie authentification
-              (mot de passe fort, double facteur, sessions révocables) arrive avec le socle Supabase.
-            </p>
-          </motion.div>
         </motion.div>
+
+        {/*
+          La mention légale reste, mais en pied de page et en une ligne : elle
+          doit être lisible sans occuper le tiers de l'écran.
+        */}
+        <motion.p
+          variants={piece}
+          initial="hidden"
+          animate="visible"
+          className="mx-auto max-w-sm text-center text-[0.72rem] leading-snug text-ink-muted"
+        >
+          Prototype — connexion simulée, aucune donnée réelle.
+        </motion.p>
       </div>
       </div>
     </>

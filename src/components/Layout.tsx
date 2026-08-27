@@ -13,6 +13,7 @@ import { Logo } from './Logo'
 import { Mascot } from './Mascot'
 import { useCascade } from '../lib/useCascade'
 import { monthKey } from '../lib/format'
+import { reglerBarresSysteme } from '../lib/native'
 
 /**
  * Ordre de lecture des écrans : il donne la direction des transitions. Aller
@@ -50,13 +51,26 @@ const NAV = [
   { to: '/annee', label: 'Mon année', icon: 'CalendarRange' },
 ]
 
-/** Applique le choix de thème sur l'élément racine. */
+/**
+ * Applique le choix de thème sur l'élément racine, et accorde les barres
+ * système de l'application native à ce même thème.
+ */
 function useThemeAttribute() {
   const theme = useApp((s) => s.theme)
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'system') root.removeAttribute('data-theme')
     else root.setAttribute('data-theme', theme)
+
+    // En mode « système », c'est la préférence du navigateur qui tranche ;
+    // elle peut changer pendant que l'application tourne.
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const appliquer = () => {
+      void reglerBarresSysteme(theme === 'dark' || (theme === 'system' && media.matches))
+    }
+    appliquer()
+    media.addEventListener('change', appliquer)
+    return () => media.removeEventListener('change', appliquer)
   }, [theme])
 }
 
@@ -237,7 +251,7 @@ export function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barre supérieure — écrans étroits */}
-        <header className="pad-safe-x sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 py-3 backdrop-blur-xl lg:hidden">
+        <header className="pad-safe-top pad-safe-x sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 pb-3 backdrop-blur-xl lg:hidden">
           {/* La signature ne tient pas à côté des commandes sur un écran étroit. */}
           <Logo size="sm" tagline={false} />
           <div className="flex shrink-0 items-center gap-2">

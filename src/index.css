@@ -498,6 +498,18 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  /*
+    Encoche et barre d'état, en haut. La valeur s'ajoute à la marge intérieure
+    déjà posée par la classe utilitaire de l'élément.
+
+    Dans l'application Android, la barre d'état ne recouvre pas la vue web —
+    `reglerBarresSysteme` le demande au système — et `env()` vaut alors zéro.
+    Cette règle sert le web installé sur l'écran d'accueil, et iOS.
+  */
+  .pad-safe-top {
+    padding-top: calc(0.75rem + env(safe-area-inset-top));
+  }
+
   .pad-safe-x {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
