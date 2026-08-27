@@ -14,13 +14,14 @@ import { Mascot } from './Mascot'
 import { useCascade } from '../lib/useCascade'
 import { monthKey } from '../lib/format'
 import { reglerBarresSysteme } from '../lib/native'
+import { objectifManquant, sectionsOuvertes, type SectionId } from '../domain/progression'
 
 /**
  * Ordre de lecture des écrans : il donne la direction des transitions. Aller
  * vers un écran plus à droite dans la barre fait glisser le contenu vers la
  * gauche, et inversement — le mouvement raconte la navigation.
  */
-const ROUTE_ORDER = ['/', '/mois', '/annee', '/quetes', '/objectifs', '/jardin', '/profil', '/admin']
+const ROUTE_ORDER = ['/', '/mois', '/objectifs', '/quetes', '/annee', '/jardin', '/profil', '/admin']
 
 const ECRAN = {
   enter: (direction: number) => ({ opacity: 0, x: 44 * direction, scale: 0.985 }),
@@ -39,17 +40,42 @@ const ECRAN = {
 }
 
 /*
- * La barre d'onglets mobile n'affiche que les cinq premières entrées : « Mon
- * année » vit après, accessible depuis la barre latérale et l'écran d'accueil.
+ * Destinations, dans l'ordre de lecture. Objectifs passe avant Quêtes : on se
+ * donne un cap avant de recevoir des défis qui servent ce cap.
+ *
+ * Chaque entrée porte sa section : celles qui ne sont pas encore ouvertes
+ * disparaissent de la barre. Un compte neuf n'affiche donc que l'accueil, la
+ * saisie et les objectifs — le reste apparaît à mesure qu'il prend son sens.
  */
-const NAV = [
-  { to: '/', label: 'Accueil', icon: 'LayoutDashboard', end: true },
-  { to: '/mois', label: 'Mon mois', icon: 'PenLine' },
-  { to: '/quetes', label: 'Quêtes', icon: 'ListChecks' },
-  { to: '/objectifs', label: 'Objectifs', icon: 'Target' },
-  { to: '/jardin', label: 'Jardin', icon: 'Sprout' },
-  { to: '/annee', label: 'Mon année', icon: 'CalendarRange' },
+const NAV: { to: string; label: string; icon: string; end?: boolean; section: SectionId }[] = [
+  { to: '/', label: 'Accueil', icon: 'LayoutDashboard', end: true, section: 'accueil' },
+  { to: '/mois', label: 'Mon mois', icon: 'PenLine', section: 'mois' },
+  { to: '/objectifs', label: 'Objectifs', icon: 'Target', section: 'objectifs' },
+  { to: '/quetes', label: 'Quêtes', icon: 'ListChecks', section: 'quetes' },
+  { to: '/jardin', label: 'Jardin', icon: 'Sprout', section: 'jardin' },
+  { to: '/annee', label: 'Mon année', icon: 'CalendarRange', section: 'annee' },
 ]
+
+/**
+ * Pastille d'appel, empruntée aux jeux : un point d'exclamation qui bat sur
+ * l'onglet où quelque chose attend. Elle ne s'affiche que sur Objectifs, et
+ * seulement tant qu'aucun objectif n'existe.
+ */
+function Pastille({ className }: { className?: string }) {
+  return (
+    <motion.span
+      className={clsx(
+        'pointer-events-none grid size-4 place-items-center rounded-full bg-berry text-[0.6rem] font-bold text-on-accent',
+        className,
+      )}
+      animate={{ scale: [1, 1.22, 1] }}
+      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+      aria-hidden
+    >
+      !
+    </motion.span>
+  )
+}
 
 /**
  * Applique le choix de thème sur l'élément racine, et accorde les barres
@@ -156,7 +182,17 @@ export function Layout() {
   const streak = useApp((s) => s.profile.streak.current)
   const season = seasonForMonth(monthKey(new Date()))
 
-  const nav = role === 'admin' ? [...NAV, { to: '/admin', label: 'Admin', icon: 'Shield' }] : NAV
+  const budgets = useApp((s) => s.budgets)
+  const goals = useApp((s) => s.goals)
+  const profile = useApp((s) => s.profile)
+  const activeMonth = useApp((s) => s.activeMonth)
+  const ouvertes = sectionsOuvertes({ budgets, goals, profile, activeMonth })
+  const reclame = objectifManquant({ goals })
+
+  const visibles = NAV.filter((item) => ouvertes.has(item.section))
+  const nav = role === 'admin'
+    ? [...visibles, { to: '/admin', label: 'Admin', icon: 'Shield', section: 'profil' as SectionId }]
+    : visibles
 
   const navRef = useCascade<HTMLElement>(':scope > a', [], { fromY: 10, step: 40 })
 
@@ -211,6 +247,7 @@ export function Layout() {
                   )}
                   <Icon name={item.icon} size={18} />
                   {item.label}
+                  {item.to === '/objectifs' && reclame && <Pastille className="ml-auto" />}
                 </>
               )}
             </NavLink>
@@ -324,8 +361,9 @@ export function Layout() {
               >
                 {({ isActive }) => (
                   <>
-                    <span className={clsx('grid size-8 place-items-center rounded-lg', isActive && 'bg-brand-soft')}>
+                    <span className={clsx('relative grid size-8 place-items-center rounded-lg', isActive && 'bg-brand-soft')}>
                       <Icon name={item.icon} size={17} />
+                      {item.to === '/objectifs' && reclame && <Pastille className="absolute -right-1 -top-0.5" />}
                     </span>
                     <span className="truncate">{item.label}</span>
                   </>

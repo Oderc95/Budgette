@@ -1,7 +1,8 @@
 import clsx from 'clsx'
 import { useApp, type ThemeChoice } from '../store/useApp'
 import { STRATEGIES, STRATEGY_BY_ID } from '../domain/strategy'
-import { Button, Card, CardHeader, Chip } from '../components/ui/primitives'
+import { Button, Card, CardHeader, Chip, Progress } from '../components/ui/primitives'
+import { completude, premiersPas } from '../domain/progression'
 import { Icon } from '../components/Icon'
 import { dateLabel } from '../lib/format'
 
@@ -27,9 +28,17 @@ export function ProfileScreen() {
   const resetDemo = useApp((s) => s.resetDemo)
   const pushToast = useApp((s) => s.pushToast)
   const setStrategy = useApp((s) => s.setStrategy)
+  const setDisplayName = useApp((s) => s.setDisplayName)
+  const budgets = useApp((s) => s.budgets)
+  const goals = useApp((s) => s.goals)
+  const activeMonth = useApp((s) => s.activeMonth)
   const strategyId = profile.strategyId
 
   const strategy = STRATEGY_BY_ID[strategyId]
+
+  const etat = { budgets, goals, profile, activeMonth }
+  const part = completude(etat)
+  const restant = premiersPas(etat).filter((p) => !p.fait)
 
   return (
     <div className="flex flex-col gap-5">
@@ -44,11 +53,22 @@ export function ProfileScreen() {
           <div className="px-5 pb-5">
             <div className="flex items-center gap-4">
               <span className="grid size-14 place-items-center rounded-2xl bg-brand text-xl font-bold text-on-accent">
-                {profile.displayName.slice(0, 1).toUpperCase()}
+                {(profile.displayName.slice(0, 1) || '?').toUpperCase()}
               </span>
-              <div className="min-w-0">
-                <p className="font-display text-xl leading-tight text-ink">{profile.displayName}</p>
-                <p className="truncate text-[0.85rem] text-ink-muted">{profile.email}</p>
+              <div className="min-w-0 flex-1">
+                {/*
+                  Le nom se modifie sur place. C'est le seul champ du compte que
+                  le prototype sait vraiment enregistrer, et c'est aussi le
+                  premier pas à franchir : il doit être atteignable ici.
+                */}
+                <input
+                  value={profile.displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder="Votre prénom"
+                  aria-label="Votre prénom"
+                  className="w-full rounded-lg border border-transparent bg-transparent font-display text-xl leading-tight text-ink outline-none transition hover:border-line focus:border-brand"
+                />
+                <p className="truncate text-[0.85rem] text-ink-muted">{profile.email || 'Adresse à renseigner'}</p>
                 <p className="mt-1 flex flex-wrap items-center gap-1.5">
                   <Chip tone={profile.role === 'admin' ? 'orchid' : 'mint'} icon={profile.role === 'admin' ? 'Shield' : 'Leaf'}>
                     {profile.role === 'admin' ? 'Administrateur' : 'Membre'}
@@ -60,7 +80,24 @@ export function ProfileScreen() {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-col gap-2">
+            {/* Complétude : la même liste qu'à l'accueil, donc les deux ne
+                peuvent pas se contredire. */}
+            <div className="mt-5 rounded-2xl border border-line bg-surface-2 p-3.5">
+              <p className="flex items-baseline justify-between text-[0.82rem] font-semibold text-ink">
+                Compte complété
+                <span className="tabular font-display text-lg text-brand-deep">{Math.round(part * 100)} %</span>
+              </p>
+              <div className="mt-2">
+                <Progress value={part} tone="brand" height={6} label="Complétude du compte" />
+              </div>
+              {restant.length > 0 && (
+                <p className="mt-2 text-[0.76rem] leading-snug text-ink-muted">
+                  Il reste à {restant.map((p) => p.label.toLowerCase()).join(', ')}.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
               <Button variant="outline" full icon="Lock">
                 Changer le mot de passe
               </Button>

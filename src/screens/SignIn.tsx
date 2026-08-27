@@ -62,6 +62,7 @@ function TitreAnime({ texte }: { texte: string }) {
 
 export function SignIn() {
   const signIn = useApp((s) => s.signIn)
+  const signUp = useApp((s) => s.signUp)
   const [email, setEmail] = useState('camille@budgette.app')
   const [password, setPassword] = useState('demo')
   const [showPassword, setShowPassword] = useState(false)
@@ -184,7 +185,10 @@ export function SignIn() {
               <Button type="submit" size="lg" full iconRight="ArrowRight">
                 Se connecter
               </Button>
-              <Button type="button" variant="ghost" size="md" full onClick={signIn}>
+              {/* Un compte neuf part d'une page blanche et passe par le
+                  questionnaire d'arrivée ; « Se connecter » reprend le compte
+                  de démonstration, déjà rempli. */}
+              <Button type="button" variant="ghost" size="md" full onClick={signUp}>
                 Créer un compte
               </Button>
             </motion.div>

@@ -89,8 +89,11 @@ interface AppState {
   planned: PlannedItem[]
 
   signIn: () => void
+  /** Compte neuf et vide, qui passe par le questionnaire d'arrivée. */
+  signUp: () => void
   signOut: () => void
-  completeOnboarding: (input: { strategyId: string; goal: Goal; displayName?: string }) => void
+  completeOnboarding: (input: { strategyId: string; goal: Goal | null; displayName?: string }) => void
+  setDisplayName: (displayName: string) => void
   setTheme: (theme: ThemeChoice) => void
   setActiveMonth: (month: MonthKey) => void
   setLine: (month: MonthKey, categoryId: string, amount: number, key?: string) => void
@@ -157,6 +160,48 @@ const initial = () => ({
   planned: MOCK_PLANNED,
 })
 
+/**
+ * Compte neuf.
+ *
+ * `initial()` porte le jeu de démonstration : douze mois saisis, des badges
+ * déjà décrochés, un objectif en cours. Utile pour montrer l'application
+ * remplie, inutilisable pour juger l'arrivée d'une personne qui n'a rien.
+ * Cette fonction produit l'autre extrémité : un compte vide, sur le mois
+ * courant, sans nom ni objectif.
+ */
+function vierge() {
+  const mois = monthKey(new Date())
+  return {
+    ...initial(),
+    onboarded: false,
+    profile: {
+      ...MOCK_PROFILE,
+      id: 'usr_nouveau',
+      pseudo: '',
+      displayName: '',
+      email: '',
+      role: 'user' as const,
+      createdAt: new Date().toISOString(),
+      xp: 0,
+      streak: { current: 0, best: 0 },
+    },
+    budgets: [{ month: mois, lines: [], closed: false }] as MonthBudget[],
+    goals: [] as Goal[],
+    unlocked: [] as UnlockedBadge[],
+    challengeProgress: [] as ChallengeProgress[],
+    pockets: [] as SavingsPocket[],
+    planned: [] as PlannedItem[],
+    friends: [] as Friend[],
+    groups: [] as Group[],
+    activeMonth: mois,
+    referenceMonth: null as MonthKey | null,
+    // La visite guidée est remplacée par le questionnaire d'arrivée, qui
+    // apprend quelque chose de la personne au lieu de lui montrer des flèches.
+    tourDone: true,
+    goalPromptPending: false,
+  }
+}
+
 function latestMonth(budgets: MonthBudget[]): MonthKey {
   const live = monthKey(new Date())
   return budgets.some((b) => b.month === live)
@@ -193,19 +238,25 @@ export const useApp = create<AppState>()(
       ...initial(),
 
       signIn: () => set({ authenticated: true }),
+      signUp: () => set({ ...vierge(), authenticated: true }),
       signOut: () => set({ authenticated: false }),
 
       completeOnboarding: ({ strategyId, goal, displayName }) =>
         set((state) => ({
           onboarded: true,
           authenticated: true,
-          goals: [goal, ...state.goals.filter((g) => g.id !== goal.id)],
+          // Sans objectif, la liste reste vide : la section Objectifs porte
+          // alors une pastille, plutôt que de bloquer l'entrée dans l'app.
+          goals: goal ? [goal, ...state.goals.filter((g) => g.id !== goal.id)] : state.goals,
           profile: {
             ...state.profile,
             strategyId,
             displayName: displayName?.trim() || state.profile.displayName,
           },
         })),
+
+      setDisplayName: (displayName) =>
+        set((state) => ({ profile: { ...state.profile, displayName: displayName.trim() } })),
 
       setTheme: (theme) => set({ theme }),
       setActiveMonth: (activeMonth) => set({ activeMonth }),
@@ -466,8 +517,7 @@ export const useApp = create<AppState>()(
       addPlanned: (item) => set((state) => ({ planned: [...state.planned, item] })),
       removePlanned: (id) => set((state) => ({ planned: state.planned.filter((p) => p.id !== id) })),
 
-      // La fin de la visite enchaîne sur la définition de l'objectif.
-      completeTour: () => set({ tourDone: true, goalPromptPending: true }),
+      completeTour: () => set({ tourDone: true }),
 
       resetDemo: () => set({ ...initial(), authenticated: true }),
     }),
@@ -482,7 +532,7 @@ export const useApp = create<AppState>()(
        * l'ancien profil avec le nouveau jeu. La v3 introduit les étiquettes, les
        * groupes et le mois de référence.
        */
-      version: 4,
+      version: 5,
       migrate: () => ({ ...initial() }),
     },
   ),

@@ -159,11 +159,20 @@ export function Mascot({ stageIndex, size = 160, animate = true }: { stageIndex:
       {/* Terre */}
       {hasPot && <ellipse cx="60" cy="90" rx="19" ry="4.5" fill="var(--c-text)" opacity="0.16" />}
 
-      {/* Graine, avant l'apparition de la tige */}
+      {/*
+        Graine, avant l'apparition de la tige.
+
+        Le flottement passe par une translation, et non par l'attribut `cy` :
+        animer un attribut SVG oblige la bibliothèque à lire sa valeur de
+        départ dans le DOM, ce qu'elle ne parvient pas à faire au premier
+        rendu — l'attribut partait alors à « undefined » et le navigateur
+        rejetait l'élément. Un compte neuf est au premier palier : il était le
+        seul à afficher cette graine, donc le seul à voir l'erreur.
+      */}
       {i === 0 && (
         <motion.ellipse
           cx="60" cy="88" rx="6" ry="4.6" fill={POT} opacity="0.85"
-          animate={animate ? { cy: [88, 86.5, 88] } : undefined}
+          animate={animate ? { y: [0, -1.5, 0] } : undefined}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
         />
       )}
