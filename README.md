@@ -87,6 +87,39 @@ son propre cache et efface le précédent. Rien n'est donc à purger à la main 
 
 Les données restent dans le navigateur, comme avant : l'installation ne change pas où elles vivent.
 
+## Application Android
+
+Le même code alimente le site et une application Android : Capacitor embarque la sortie de
+`npm run build` dans une coquille native et la sert depuis le disque de l'appareil. Rien n'est
+réécrit, et `domain/` reste intact.
+
+L'APK se récupère **sans rien installer sur son ordinateur** — ni Android Studio, ni SDK, ni
+émulateur. `.github/workflows/apk.yml` le construit sur les serveurs de GitHub.
+
+Le téléchargement passe par la release d'essai, dont l'adresse ne change jamais :
+
+<https://github.com/Oderc95/Budgette/releases/tag/apk-essai>
+
+Elle est refaite à chaque poussée sur `main`. C'est un lien direct, que le navigateur d'un téléphone
+suit sans détour — contrairement aux pièces jointes d'un run, que l'interface mobile de GitHub
+affiche sans les rendre cliquables. L'APK reste aussi joint à chaque run, sous `budgette-apk`, ce
+qui permet d'essayer une proposition de modification avant sa fusion.
+
+Pour l'installer : ouvrir le lien depuis le téléphone, toucher `budgette.apk`, puis autoriser
+l'installation depuis cette source quand Android le demande.
+
+L'APK produit est signé avec la clé de débogage d'Android, commune à tous les projets. Elle suffit
+pour essayer l'application et ne convient à aucune publication : le Play Store exigera une clé de
+release, à créer le moment venu et à conserver — elle n'est pas remplaçable.
+
+Pour construire en local, avec le SDK Android installé :
+
+```bash
+npm run build
+npx cap sync android          # recopie dist/ dans le projet Android
+cd android && ./gradlew assembleDebug
+```
+
 ## Architecture
 
 ```

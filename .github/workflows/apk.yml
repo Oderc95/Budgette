@@ -1,0 +1,115 @@
+# Construit l'application Android et publie l'APK en pièce jointe du run.
+#
+# Le but est de pouvoir installer Budgette sur un téléphone sans rien installer
+# sur son ordinateur : ni Android Studio, ni SDK, ni émulateur. L'exécuteur de
+# GitHub porte déjà le SDK Android ; il suffit de récupérer le fichier produit.
+#
+# L'APK est publié de deux façons. En pièce jointe du run, ce qui vaut pour
+# toutes les propositions de modification. Et, depuis main, dans une release
+# permanente : c'est le seul des deux qui donne un lien de téléchargement
+# direct — l'interface mobile de GitHub affiche les pièces jointes d'un run
+# sans les rendre cliquables, et un téléphone ne peut donc pas les récupérer.
+#
+# L'APK est signé avec la clé de débogage d'Android, commune à tous les projets.
+# Elle suffit pour installer et essayer l'application, et ne convient à aucune
+# publication : le Play Store exigera une clé de release, créée le moment venu.
+name: Application Android
+
+on:
+  # Lancement à la demande, depuis l'onglet Actions.
+  workflow_dispatch:
+  # Et à chaque poussée sur main, pour qu'un APK à jour soit toujours
+  # disponible sans avoir à y penser.
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  # Sur les propositions de modification, la construction sert de vérification :
+  # une erreur côté Android se voit avant la fusion, et l'APK de la proposition
+  # est essayable sans attendre.
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+# `write` sert à publier la release depuis main. Les propositions de
+# modification n'y touchent pas : leur étape de publication est ignorée.
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # Capacitor compile en Java 21, comme le déclare `capacitor.build.gradle`.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      # Le build web d'abord : `cap sync` recopie `dist/` dans le projet Android.
+      - name: Build web
+        run: npm run build
+
+      - name: Synchronise le projet Android
+        run: npx cap sync android
+
+      - name: Construit l'APK
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+
+      # Nom explicite : c'est celui que verra la personne qui l'installe.
+      - name: Renomme l'APK
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk budgette.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: budgette-apk
+          path: budgette.apk
+          if-no-files-found: error
+          # Au-delà, l'APK n'a plus d'intérêt : il en existe un plus récent.
+          retention-days: 30
+
+      # Release permanente, remplacée à chaque construction depuis main. Son
+      # adresse ne change pas : https://github.com/<dépôt>/releases/tag/apk-essai
+      # Le fichier y est un lien direct, que le navigateur d'un téléphone
+      # télécharge sans détour.
+      - name: Publie la release d'essai
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Supprimer d'abord garde la release à un seul APK, celui du jour, et
+          # rend l'étape rejouable. L'échec est toléré : la première fois, il
+          # n'y a rien à supprimer.
+          gh release delete apk-essai --yes --cleanup-tag || true
+          gh release create apk-essai budgette.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Budgette — version d'essai" \
+            --notes "$(cat <<'TEXTE'
+          APK à installer sur un téléphone Android pour essayer Budgette.
+
+          Touchez `budgette.apk` ci-dessous pour le télécharger. Android
+          demandera d'autoriser l'installation depuis cette source : c'est
+          normal pour une application qui ne vient pas du Play Store.
+
+          Cette version est signée avec la clé de débogage d'Android. Elle sert
+          à essayer l'application, pas à la publier.
+
+          Reconstruite à chaque modification de `main` ; le lien, lui, ne change
+          jamais.
+          TEXTE
+          )"

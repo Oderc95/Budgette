@@ -16,6 +16,15 @@ export function enregistrerServiceWorker() {
   if (!('serviceWorker' in navigator)) return
 
   /*
+   * Dans l'application Android, les fichiers sont déjà sur l'appareil : mettre
+   * en cache une copie locale n'apporte rien, et le cache survivrait à une
+   * mise à jour de l'application en resservant l'ancienne version. Capacitor
+   * sert la page depuis `localhost`, donc le protocole ne suffit pas à la
+   * reconnaître — c'est l'objet qu'il injecte qui la distingue.
+   */
+  if ('Capacitor' in window) return
+
+  /*
    * L'enregistrement attend le chargement complet de la page. Lancé plus tôt,
    * le préchargement de la coquille entre en concurrence avec l'affichage du
    * premier écran, sur la connexion comme sur le processeur.
