@@ -284,36 +284,19 @@ export const MOCK_UNLOCKED: UnlockedBadge[] = [
   { badgeId: 'sub_slayer', unlockedAt: '2026-06-12T22:15:00.000Z' },
   { badgeId: 'saver_10', unlockedAt: '2026-06-30T19:45:00.000Z' },
   { badgeId: 'debt_zero', unlockedAt: '2026-07-31T20:00:00.000Z' },
-  { badgeId: 'frugal_week', unlockedAt: '2026-08-10T21:20:00.000Z' },
 ]
 
 /** Défis déjà validés sur la période en cours, pour la démonstration. */
-export const MOCK_CHALLENGE_PROGRESS = [
-  { challengeId: 'd_log', period: '2026-08-21', value: 1, completed: true, completedAt: '2026-08-21T07:48:00.000Z' },
-  { challengeId: 'd_home_meal', period: '2026-08-21', value: 1, completed: true, completedAt: '2026-08-21T12:55:00.000Z' },
-  { challengeId: 'd_no_spend', period: '2026-08-21', value: 0, completed: false },
-  { challengeId: 'd_no_cash', period: '2026-08-21', value: 1, completed: true, completedAt: '2026-08-21T08:30:00.000Z' },
-  { challengeId: 'd_round_up', period: '2026-08-21', value: 0, completed: false },
-  { challengeId: 'd_cart_pause', period: '2026-08-21', value: 0, completed: false },
-  { challengeId: 'w_no_delivery', period: '2026-W34', value: 6, completed: false },
-  { challengeId: 'w_three_no_spend', period: '2026-W34', value: 2, completed: false },
-  { challengeId: 'w_review', period: '2026-W34', value: 1, completed: true, completedAt: '2026-08-17T20:40:00.000Z' },
-  { challengeId: 'w_grocery_budget', period: '2026-W34', value: 1, completed: true, completedAt: '2026-08-19T18:25:00.000Z' },
-  { challengeId: 'w_cash_only', period: '2026-W34', value: 0, completed: false },
-  { challengeId: 'w_sell', period: '2026-W34', value: 0, completed: false },
-  { challengeId: 'm_no_atm', period: '2026-08', value: 1, completed: false },
-  { challengeId: 'm_save_10', period: '2026-08', value: 14.1, completed: true, completedAt: '2026-08-04T07:15:00.000Z' },
-  { challengeId: 'm_close', period: '2026-08', value: 0, completed: false },
-  { challengeId: 'm_sub_audit', period: '2026-08', value: 1, completed: true, completedAt: '2026-08-06T21:10:00.000Z' },
-  { challengeId: 'm_under_budget', period: '2026-08', value: 0, completed: false },
-  { challengeId: 'm_no_overdraft', period: '2026-08', value: 1, completed: false },
-  { challengeId: 'm_extra_debt', period: '2026-08', value: 0, completed: false },
-  { challengeId: 'y_12_closed', period: '2026', value: 7, completed: false },
-  { challengeId: 'y_emergency_1m', period: '2026', value: 0.61, completed: false },
-  { challengeId: 'y_save_15', period: '2026', value: 8.3, completed: false },
-  { challengeId: 'y_debt_free', period: '2026', value: 1, completed: true, completedAt: '2026-07-31T20:00:00.000Z' },
-  { challengeId: 'y_goal', period: '2026', value: 0, completed: false },
-]
+/**
+ * Registre des quêtes créditées.
+ *
+ * Il est vide par construction : les quêtes ne se cochent plus, elles se
+ * mesurent sur les mois saisis. `syncQuetes` remplit ce registre au premier
+ * lancement, en créditant d'un coup ce que le jeu de démonstration a déjà
+ * mérité. Y poser des valeurs à la main ne ferait que risquer la
+ * contradiction avec les chiffres.
+ */
+export const MOCK_CHALLENGE_PROGRESS: never[] = []
 
 /**
  * Le calendrier de Camille : ce qu'elle sait déjà devoir payer ou verser.
